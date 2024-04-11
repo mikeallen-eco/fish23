@@ -32,9 +32,12 @@ install obitools version 2, ecopcr (also requires python 2.7)
 conda install -c bioconda obitools
 conda install -c bioconda ecopcr
 ```
-# install swarm (I think install this one on a different conda env with python 3+)
+
+install swarm (I think install this one on a different conda env with python 3+)
+```
 conda install -c bioconda swarm
-# install ecoprimers
+```
+install ecoprimers
 conda install -c bioconda ecoprimers
 
 # Demultiplex data
