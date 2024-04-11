@@ -48,12 +48,40 @@ conda install -c bioconda ecoprimers
 ```
 wget -r -nH --cut-dirs=2 https://htseq.princeton.edu/tmp/SOMECODE/
 ```
-9. On the cluster, navigate to a directory with at least 1TB to spare. Create a main directory which I'll call "fish23" and a subdirectory called "rawdata".
+9. On the cluster, navigate to a directory with at least 1TB of storage space to spare. Create a main directory which I'll call "fish23" and a subdirectory called "rawdata".
 ```
 mkdir fish23
-cd fish23
-mkdir rawdata
-cd rawdata
+mkdir fish23/rawdata
+cd fish23/rawdata
 ```
 10. Now that you are in the rawdata folder, run the wget commands for each sequencing pool in the command line. The downloads take only about 30 s per pool. In between downloads for each pool, move the output text files into additional subdirectories so they don't get over-written. OK, now all of the sequencing data is safely on the cluster.
+
+3. move the unmatched reads to a separate folder
+4. connect to cluster and activate obi2b conda environment
+5. change directory to rawdata folder and sbatch the illuminapairedend.sh script using its full file path (makes *.ali.fastq)
+  (takes a long time, so best to do in batches simultaneously)
+6. make "aligned" directory under main project dir and move combined fastq files into it (or batch folder within it, e.g., X, Y, and Z in fish ibi)
+7. run obigrep.sh to make *.ali.fastq files which keeps only good alignments (quick)
+8. run cutadapt.sh to create *.ali.cut.fastq files in same directory (installed cutadapt using googled conda script)
+8a. (run fastqc to make sure you actually got rid of adapters, low-qual bases, etc.)
+9. run prinseq.sh to create *.ali.cut.n21n.fastq files (just sequences w/ < 21 N bases)
+10. run seqtk.sh to turn fastq files into fasta files (so that we can manipulate them with fake indexes to run through ngsfilter)
+11. add fake indices (aaaaa:aaaaa) to sequences of each sample separately using indexS.sh scripts where S is sample name
+    used custom R script to make each .sh file (make_bash.Rmd), uploaded to respective folders in "aligned" using OnDemand file explorer 
+12. add sample name to each sequence header by running ngsS.sh scripts where S is sample name and indexS.txt is an input file with sample info
+    used custom R script to make each .sh and .txt file (make_bash.Rmd)
+# note: #11 & 12 might be avoidable with obiannotate: https://git.metabarcoding.org/obitools/obitools3/-/issues/127
+    # also it may be possible to run ngsfilter with blank tags using --:-- but I forgot where I read that! 
+13. make new directory: merged
+    mkdir merged
+14. copy the final sample files to the folder called merged
+cp *.fasta ../merged # that would copy everything in your working directory ending in .fasta to merged
+14a. run the concat.sh scripts to compile all samples into a single file; delete the individual sample file copies   
+15. run obiuni.sh to collapse all reads to counts by sample
+16. run obiannotate.sh to remove unnecessary header info
+17. run obigrep2.sh, renaming file to merged.uniq.c10.l140.L190.fasta 
+  17a. 	obigrep settings: >= 10 read count, for MiFish: length 140-190 (from Mjolnir documentation & MiFish paper)
+  17b.  Zeale: l = 130, L = 185 based on Zeale et al. 2011 paper
+  17c.  Coleop: l = 75, L = 125 based on Epp paper
+18. ONLY DO THIS IF YOU DON't WANT TO USE SWARM TO CLUSTER. Run obiclean.sh to denoise (default settings? it is a simple form of clustering) - final file merged.uniq.c10.l140.l190.cln.fasta
 
