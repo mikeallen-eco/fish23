@@ -26,15 +26,17 @@ You'll need to activate it each time you log in in order to use any obitools com
 conda create --name obi2 python=2.7
 conda activate obi2
 ```
-5. install obitools, ecopcr, cutadapt
+5. install obitools, ecopcr, cutadapt, prinseq, seqtk, swarm, and ecoprimers
 install obitools version 2, ecopcr (also requires python 2.7)
 ```
 conda install -c bioconda obitools
 conda install -c bioconda ecopcr
 conda install bioconda::cutadapt
+conda install prinseq
+conda install seqtk
 ```
 
-install swarm (I think install this one on a different conda env with python 3+)
+Install swarm (I think install this one on a different conda env with python 3+)
 ```
 conda install -c bioconda swarm
 ```
@@ -79,7 +81,7 @@ Paste the following inside the script file:
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=24
 #SBATCH --mem=100000
-#SBATCH --time=1-10:00:00
+#SBATCH --time=0-8:00:00
 #SBATCH -o %j_%N.out
 #SBATCH -e %j_%N.err
 
@@ -95,10 +97,13 @@ do
 obigrep -p 'mode!="joined"' ${f}.fastq > ${f}.ali.fastq
 done
 ```
-14. Navigate back to the rawdata folder and run the script using the sbatch command. This will merge the paired reads (labeled read-1 and read-4) within the folder into a single file per read with the suffix .ali.fastq. Note: this can take a while, so can also be done in batches simultaneously by adding the sequencing pool number in front of the * above. E.g., file f01_illuminapairedend.X.sh with modified code:
+14. Navigate back to the rawdata folder and run the script using the sbatch command. This will merge the paired reads (labeled read-1 and read-4) within the folder into a single file per read with the suffix .ali.fastq. Note: this can take a while, so can also be done in batches simultaneously by adding the sequencing pool number in front of the * above. E.g., if the prefix for sequencing pool X was 3011, then you'd make file f01_illuminapairedend.X.sh with the following bits of code modified:
 ```
-ls -1 3011*-read-[1,4].fastq.gz | sed 's/-read-[1,4].fastq.gz//' # modified part of first loop
-for f in `ls -1 3011*.fastq | sed 's/.fastq//' ` # modified part of second loop
+# modified part of first loop
+ls -1 3011*-read-[1,4].fastq.gz | sed 's/-read-[1,4].fastq.gz//'
+
+# modified part of second loop
+ls -1 3011*.fastq | sed 's/.fastq//'
 ```
 This is how to run the script using sbatch (again, run this from within the rawdata folder):
 ```
@@ -147,7 +152,12 @@ done
 ```
 # Add sample name to sequence header
 
-
+```
+for f in `ls -1 *.n21.fasta | sed 's/.ali.cut.n21.fasta//' | sed 's/3011__//' `
+do
+obiannotate -S sample:${f} 3011__${f}.ali.cut.n21.fasta > ${f}.ali.cut.n21.ann.fasta
+done
+```
 
 parts below here are placeholders that will be revised...
 add fake indices (aaaaa:aaaaa) to sequences of each sample separately using indexS.sh scripts where S is sample name
