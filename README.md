@@ -122,11 +122,11 @@ sbatch ../f01_illuminapairedend.X.sh
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=24
 #SBATCH --mem=100000
-#SBATCH --time=1-10:00:00
+#SBATCH --time=0-7:00:00
 #SBATCH -o %j_%N.out
 #SBATCH -e %j_%N.err
 
-# loop to run cutadapt (remove primers etc.)
+# loop to run cutadapt (remove any remaining adapters, trim low-quality reads)
 for f in `ls -1 *.ali.fastq | sed 's/.ali.fastq//' `
 do
 cutadapt -q 30 -a TCGTCGGCAGCGTCAGATGTGTATAAGAGACAG  -g GTCTCGTGGGCTCGGAGATGTGTATAAGAGACAG -o ${f}.ali.cut.fastq ${f}.ali.fastq
@@ -135,7 +135,7 @@ done
 # loop to remove sequences with more than 21 N bases
 for f in `ls -1 *.ali.cut.fastq | sed 's/.ali.cut.fastq//' `
 do
-perl /YOURHOMEDIRECTORY/miniconda3/envs/obi2b/bin/prinseq-lite.pl -verbose -fastq ${f}.ali.cut.fastq -ns_max_n 21 -out_good ${f}.ali.cut -out_bad ${f}.ali.cut.y21n
+perl /YOURHOMEDIRECTORY/miniconda3/envs/obi2b/bin/prinseq-lite.pl -verbose -fastq ${f}.ali.cut.fastq -ns_max_n 21 -out_good ${f}.ali.cut.n21 -out_bad ${f}.ali.cut.y21n
 done
 ```
 17. Run fastqc for quality control
