@@ -145,27 +145,54 @@ fastqc
 The resulting html files should be downloaded and examinied to check that you actually got rid of adapters, low-qual bases, etc.
 19. Run seqtk.sh to turn fastq files into fasta files
 ```
-for f in `ls -1 *.ali.cut.fastq | sed 's/.ali.cut.fastq//' `
+for f in `ls -1 *.ali.cut.n21.fastq | sed 's/.ali.cut.n21.fastq//' `
 do
-seqtk seq -a ${f}.ali.cut.fastq > ${f}.ali.cut.fasta
+seqtk seq -a ${f}.ali.cut.n21.fastq > ${f}.ali.cut.n21.fasta
 done
 ```
-# Add sample name to sequence header
+# Remove primers, etc.
+This is done using the obitools command ngsfilter. Use nano to make bash scripts to run the following code for each sequencing pool: f03_ngsfilter.X.sh, f03_ngsfilter.Y.sh, and f03_ngsfilter.Z.sh. Change the sequence pool code (3011 in the example below) in the file as needed. Run the jobs using sbatch called from within the rawdata folder. This script takes about a minute per file in its current form.
+```
+#!/bin/bash
 
-```
-for f in `ls -1 *.n21.fasta | sed 's/.ali.cut.n21.fasta//' | sed 's/3011__//' `
+#SBATCH --partition=main
+#SBATCH --requeue
+#SBATCH --job-name=ngsX
+#SBATCH --nodes=1
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=24
+#SBATCH --mem=100000
+#SBATCH --time=0-5:00:00
+#SBATCH -o %j_%N.out
+#SBATCH -e %j_%N.err
+
+for f in `ls -1 3011*.n21.fasta | sed 's/.ali.cut.n21.fasta//' | sed 's/3011__//' `
 do
-obiannotate -S sample:${f} 3011__${f}.ali.cut.n21.fasta > ${f}.ali.cut.n21.ann.fasta
+# make an index file for each sample (overwriting it each time)
+echo fish23 ${f} aaaaa:ttttt TCTTGTCGGTAAAACTCGTGCCAGC CCATAGTGGGGTATCTAATCCCAGTTTG > ngs_index.X.txt
+
+# add a fake tag onto each sequence so that ngsfilter can run
+sed '/^>/ !{s/^/aaaaa/; s/$/aaaaa/}' 3011__${f}.ali.cut.n21.fasta > 3011__${f}.ali.cut.n21.tag.fasta
+
+# run ngsfilter to remove primers/codes and add sample name to header
+ngsfilter -t ngs_index.X.txt -u unidentified${f}.fasta 3011__${f}.ali.cut.n21.tag.fasta > 3011__${f}.ali.cut.n21.tag.ngs.fasta
 done
 ```
+
+Merge files & dereplicate
+```
+cat *.ngs.fasta > merged.fasta
+obiuniq -m sample merged.fasta > merged.uni.fasta
+obiannotate -k count -k merged_sample merged.uni.fasta > $$ ; mv $$ merged.uni.fasta
+obigrep -l 140 -L 190 -p 'count>=10' merged.uni.fasta > merged.uni.c10.l140.L190.fasta
+```
+
 
 parts below here are placeholders that will be revised...
-add fake indices (aaaaa:aaaaa) to sequences of each sample separately using indexS.sh scripts where S is sample name
-    used custom R script to make each .sh file (make_bash.Rmd), uploaded to respective folders in "aligned" using OnDemand file explorer 
-12. add sample name to each sequence header by running ngsS.sh scripts where S is sample name and indexS.txt is an input file with sample info
-    used custom R script to make each .sh and .txt file (make_bash.Rmd)
-# note: #11 & 12 might be avoidable with obiannotate: https://git.metabarcoding.org/obitools/obitools3/-/issues/127
-    # also it may be possible to run ngsfilter with blank tags using --:-- but I forgot where I read that! 
+
+
+
+
 13. make new directory: merged
     mkdir merged
 14. copy the final sample files to the folder called merged
