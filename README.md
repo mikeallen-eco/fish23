@@ -21,16 +21,17 @@ sh Miniconda3-latest-Linux-x86_64.sh
 conda -V # check that miniconda is installed
 ```
 4. create a new conda environment that runs python v 2.7 and activate it
-You'll need to activate it each time you log in in order to use any obitools commands
+You'll need to activate it each time you log in in order to use any obitools commands.
 ```
 conda create --name obi2 python=2.7
 conda activate obi2
 ```
-5. install obitools, ecopcr, swarm, and ecoprimers
+5. install obitools, ecopcr, cutadapt
 install obitools version 2, ecopcr (also requires python 2.7)
 ```
 conda install -c bioconda obitools
 conda install -c bioconda ecopcr
+conda install bioconda::cutadapt
 ```
 
 install swarm (I think install this one on a different conda env with python 3+)
@@ -82,27 +83,74 @@ Paste the following inside the script file:
 #SBATCH -o %j_%N.out
 #SBATCH -e %j_%N.err
 
+# loop to merge reads
 for f in `ls -1 *-read-[1,4].fastq.gz | sed 's/-read-[1,4].fastq.gz//' `
 do
 illuminapairedend --score-min=40 -r ${f}-read-4.fastq.gz ${f}-read-1.fastq.gz > ${f}.fastq
 done
+
+# loop to keep only successfully aligned reads
+for f in `ls -1 *.fastq | sed 's/.fastq//' `
+do
+obigrep -p 'mode!="joined"' ${f}.fastq > ${f}.ali.fastq
+done
 ```
-14. Navigate back to the rawdata folder and run the script using the sbatch command. This will merge the paired reads (labeled read-1 and read-4) within the folder. Note: this can take a while, so can also be done in batches by adding the sequencing pool number in front of the * above. E.g., file f01_illuminapairedend.X.sh with code:
+14. Navigate back to the rawdata folder and run the script using the sbatch command. This will merge the paired reads (labeled read-1 and read-4) within the folder into a single file per read with the suffix .ali.fastq. Note: this can take a while, so can also be done in batches simultaneously by adding the sequencing pool number in front of the * above. E.g., file f01_illuminapairedend.X.sh with modified code:
 ```
-ls -1 3011*-read-[1,4].fastq.gz | sed 's/-read-[1,4].fastq.gz//' to do in batches simultaneously)
+ls -1 3011*-read-[1,4].fastq.gz | sed 's/-read-[1,4].fastq.gz//' # modified part of first loop
+for f in `ls -1 3011*.fastq | sed 's/.fastq//' ` # modified part of second loop
 ```
-Within the rawdata folder, run the script using sbatch:
+This is how to run the script using sbatch (again, run this from within the rawdata folder):
 ```
 sbatch ../f01_illuminapairedend.X.sh
 ```
+15. Make a new directory within the main project directory called "aligned" and move the fastq files into subfolders within in by sequencing pool (e.g., folder X, Y, and Z).
+# Trim adapters and primers from reads
+16. Use nano to make a script in the main directory called f02_cutadapt.sh and paste the text below into it. This will trim primers and adapters from the sequences creating new files of trimmed sequences with the suffix *.ali.cut.fastq. It also runs prinseq.sh to remove sequences w/ > 21 N bases. Change the file path to the prinseq-lite.pl script before you run this. Run the script from within the directory your files are in.
+```
+#!/bin/bash
 
-6. make "aligned" directory under main project dir and move combined fastq files into it (or batch folder within it, e.g., X, Y, and Z in fish ibi)
-7. run obigrep.sh to make *.ali.fastq files which keeps only good alignments (quick)
-8. run cutadapt.sh to create *.ali.cut.fastq files in same directory (installed cutadapt using googled conda script)
-8a. (run fastqc to make sure you actually got rid of adapters, low-qual bases, etc.)
-9. run prinseq.sh to create *.ali.cut.n21n.fastq files (just sequences w/ < 21 N bases)
-10. run seqtk.sh to turn fastq files into fasta files (so that we can manipulate them with fake indexes to run through ngsfilter)
-11. add fake indices (aaaaa:aaaaa) to sequences of each sample separately using indexS.sh scripts where S is sample name
+#SBATCH --partition=main
+#SBATCH --requeue
+#SBATCH --job-name=cutadapt
+#SBATCH --nodes=1
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=24
+#SBATCH --mem=100000
+#SBATCH --time=1-10:00:00
+#SBATCH -o %j_%N.out
+#SBATCH -e %j_%N.err
+
+# loop to run cutadapt (remove primers etc.)
+for f in `ls -1 *.ali.fastq | sed 's/.ali.fastq//' `
+do
+cutadapt -q 30 -a TCGTCGGCAGCGTCAGATGTGTATAAGAGACAG  -g GTCTCGTGGGCTCGGAGATGTGTATAAGAGACAG -o ${f}.ali.cut.fastq ${f}.ali.fastq
+done
+
+# loop to remove sequences with more than 21 N bases
+for f in `ls -1 *.ali.cut.fastq | sed 's/.ali.cut.fastq//' `
+do
+perl /YOURHOMEDIRECTORY/miniconda3/envs/obi2b/bin/prinseq-lite.pl -verbose -fastq ${f}.ali.cut.fastq -ns_max_n 21 -out_good ${f}.ali.cut -out_bad ${f}.ali.cut.y21n
+done
+```
+17. Run fastqc for quality control
+```
+fastqc
+```
+The resulting html files should be downloaded and examinied to check that you actually got rid of adapters, low-qual bases, etc.
+19. Run seqtk.sh to turn fastq files into fasta files
+```
+for f in `ls -1 *.ali.cut.fastq | sed 's/.ali.cut.fastq//' `
+do
+seqtk seq -a ${f}.ali.cut.fastq > ${f}.ali.cut.fasta
+done
+```
+# Add sample name to sequence header
+
+
+
+parts below here are placeholders that will be revised...
+add fake indices (aaaaa:aaaaa) to sequences of each sample separately using indexS.sh scripts where S is sample name
     used custom R script to make each .sh file (make_bash.Rmd), uploaded to respective folders in "aligned" using OnDemand file explorer 
 12. add sample name to each sequence header by running ngsS.sh scripts where S is sample name and indexS.txt is an input file with sample info
     used custom R script to make each .sh and .txt file (make_bash.Rmd)
@@ -117,7 +165,5 @@ cp *.fasta ../merged # that would copy everything in your working directory endi
 16. run obiannotate.sh to remove unnecessary header info
 17. run obigrep2.sh, renaming file to merged.uniq.c10.l140.L190.fasta 
   17a. 	obigrep settings: >= 10 read count, for MiFish: length 140-190 (from Mjolnir documentation & MiFish paper)
-  17b.  Zeale: l = 130, L = 185 based on Zeale et al. 2011 paper
-  17c.  Coleop: l = 75, L = 125 based on Epp paper
 18. ONLY DO THIS IF YOU DON't WANT TO USE SWARM TO CLUSTER. Run obiclean.sh to denoise (default settings? it is a simple form of clustering) - final file merged.uniq.c10.l140.l190.cln.fasta
 
