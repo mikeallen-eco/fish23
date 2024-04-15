@@ -56,10 +56,46 @@ cd fish23/rawdata
 ```
 10. Now that you are in the rawdata folder, run the wget commands for each sequencing pool in the command line. The downloads take only about 30 s per pool. In between downloads for each pool, move the output text files into additional subdirectories so they don't get over-written. OK, now all of the sequencing data is safely on the cluster.
 
-3. move the unmatched reads to a separate folder
-4. connect to cluster and activate obi2b conda environment
-5. change directory to rawdata folder and sbatch the illuminapairedend.sh script using its full file path (makes *.ali.fastq)
-  (takes a long time, so best to do in batches simultaneously)
+# Merge paired reads
+
+11. In the rawdata folder, move the unmatched reads to a new subfolder called 'unmatched'.
+12. Activate the conda environment that contains obitools. For example:
+```
+conda activate obi2b
+```
+13. Go to the directory above rawdata and use the nano command to make a new bash script called 'f01_illuminapairedend.sh'.
+```
+nano f01_illuminapairedend.sh
+```
+Paste the following inside the script file:
+```
+#!/bin/bash
+
+#SBATCH --partition=main
+#SBATCH --requeue
+#SBATCH --job-name=illuminapaired
+#SBATCH --nodes=1
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=24
+#SBATCH --mem=100000
+#SBATCH --time=1-10:00:00
+#SBATCH -o %j_%N.out
+#SBATCH -e %j_%N.err
+
+for f in `ls -1 *-read-[1,4].fastq.gz | sed 's/-read-[1,4].fastq.gz//' `
+do
+illuminapairedend --score-min=40 -r ${f}-read-4.fastq.gz ${f}-read-1.fastq.gz > ${f}.fastq
+done
+```
+14. Navigate back to the rawdata folder and run the script using the sbatch command. This will merge the paired reads (labeled read-1 and read-4) within the folder. Note: this can take a while, so can also be done in batches by adding the sequencing pool number in front of the * above. E.g., file f01_illuminapairedend.X.sh with code:
+```
+ls -1 3011*-read-[1,4].fastq.gz | sed 's/-read-[1,4].fastq.gz//' to do in batches simultaneously)
+```
+Within the rawdata folder, run the script using sbatch:
+```
+sbatch ../f01_illuminapairedend.X.sh
+```
+
 6. make "aligned" directory under main project dir and move combined fastq files into it (or batch folder within it, e.g., X, Y, and Z in fish ibi)
 7. run obigrep.sh to make *.ali.fastq files which keeps only good alignments (quick)
 8. run cutadapt.sh to create *.ali.cut.fastq files in same directory (installed cutadapt using googled conda script)
