@@ -10,7 +10,7 @@ ssh YOURNETID@amarel.rutgers.edu
 ```
 2. Start an interactive session so you don't accidentally use the login nodes for processing.
 ```
-srun -p main -N 1 -c 2 -n 1 -t 05:00:00 --pty /bin/bash  # type that into a terminal/console
+srun -p main -N 1 -c 20 -n 1 -t 05:00:00 --mem 100GB --pty /bin/bash  # type that into a terminal/console
 ```
 
 # Set up the required software
@@ -179,28 +179,239 @@ ngsfilter -t ngs_index.X.txt -u unidentified${f}.fasta 3011__${f}.ali.cut.n21.ta
 done
 ```
 
-Merge files & dereplicate
+Merge files into one
 ```
 cat *.ngs.fasta > merged.fasta
+```
+Dereplicate (takes about 30-40 min). Use nano to make a bash script (f04_mergeuni.sh) with the following code and run using sbatch.
+```
+#!/bin/bash
+
+#SBATCH --partition=main
+#SBATCH --requeue
+#SBATCH --job-name=obiuni
+#SBATCH --nodes=1
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=24
+#SBATCH --mem=80000
+#SBATCH --time=0-01:00:00
+#SBATCH --output=slurm.justr.%N.%j.out
+#SBATCH --error=slurm.justr.%N.%j.err
+
+# dereplicate
 obiuniq -m sample merged.fasta > merged.uni.fasta
+
+# remove unecessary headers
 obiannotate -k count -k merged_sample merged.uni.fasta > $$ ; mv $$ merged.uni.fasta
-obigrep -l 140 -L 190 -p 'count>=10' merged.uni.fasta > merged.uni.c10.l140.L190.fasta
+
+# filter based on read length and minimum read count
+obigrep -l 140 -L 190 -p 'count>=0' merged.uni.fasta > merged.uni.c0.140.190.fasta
+obigrep -l 140 -L 190 -p 'count>=2' merged.uni.fasta > merged.uni.c2.140.190.fasta
+obigrep -l 140 -L 190 -p 'count>=10' merged.uni.fasta > merged.uni.c10.140.190.fasta
+
+```
+
+```
+obistat -c count merged.uni.c0.140.190.fasta |  sort -nk1 | head -20
 ```
 
 
-parts below here are placeholders that will be revised...
-
-
-
-
-13. make new directory: merged
-    mkdir merged
-14. copy the final sample files to the folder called merged
-cp *.fasta ../merged # that would copy everything in your working directory ending in .fasta to merged
-14a. run the concat.sh scripts to compile all samples into a single file; delete the individual sample file copies   
-15. run obiuni.sh to collapse all reads to counts by sample
-16. run obiannotate.sh to remove unnecessary header info
-17. run obigrep2.sh, renaming file to merged.uniq.c10.l140.L190.fasta 
-  17a. 	obigrep settings: >= 10 read count, for MiFish: length 140-190 (from Mjolnir documentation & MiFish paper)
 18. ONLY DO THIS IF YOU DON't WANT TO USE SWARM TO CLUSTER. Run obiclean.sh to denoise (default settings? it is a simple form of clustering) - final file merged.uniq.c10.l140.l190.cln.fasta
+```
+#SBATCH --partition=main
+#SBATCH --requeue
+#SBATCH --job-name=obiuni
+#SBATCH --nodes=1
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=24
+#SBATCH --mem=80000
+#SBATCH --time=3-00:00:00
+#SBATCH --output=slurm.justr.%N.%j.out
+#SBATCH --error=slurm.justr.%N.%j.err
+
+
+obiclean -s merged_sample -r 0.05 -H \
+  merged.uni.c10.140.190.fasta > merged.uni.c10.140.190.cln.fasta
+```
+optional: clustering sequences into MOTUs with SWARM (if doing this, don't run obiclean in # 18 above)
+
+# Clustering into MOTUs
+
+Move merged.uni.c0.140.190.fasta into a new folder called "cluster"
+18b. shorten the uniq IDs (use a one-character prefix for it to work with the tallying script below)
+```
+obiannotate --seq-rank merged.uni.c10.140.190.fasta | obiannotate --set-identifier '"F_%d"%seq_rank' > merged.uni.c10.140.190.sht.fasta
+
+obitab -o merged.uni.c10.140.190.sht.fasta > merged.uni.c10.140.190.sht.tab
+```
+Convert into vsearch format
+```
+obiannotate -k count merged.uni.c10.140.190.sht.fasta > merged.uni.c10.140.190.sht.vsc.fasta
+
+sed -i -e 's/[[:space:]]count/;size/g' merged.uni.c10.140.190.sht.vsc.fasta
+sed -i 's/;\+$//' merged.uni.c10.140.190.sht.vsc.fasta
+```
+23b. remove the chimeras
+Make a script file (f05_chimera.sh) and run it using sbatch.
+```
+#!/bin/bash
+
+#SBATCH --partition=main
+#SBATCH --requeue
+#SBATCH --job-name=chimera
+#SBATCH --nodes=1
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=24
+#SBATCH --mem=80000
+#SBATCH --time=0-00:30:00
+#SBATCH --output=slurm.justr.%N.%j.out
+#SBATCH --error=slurm.justr.%N.%j.err
+
+vsearch -sortbysize merged.uni.c10.140.190.sht.vsc.fasta -output merged.uni.c10.140.190.sht.vsc.srt.fasta
+
+vsearch --uchime_denovo merged.uni.c10.140.190.sht.vsc.srt.fasta --sizeout --nonchimeras merged.uni.c10.140.190.sht.vsc.srt.chi.fasta --chimeras merged.uni.c10.140.190.sht.vsc.srt.chi.fasta --uchimeout uchimeout.txt
+```
+24b. make it into a single-line fasta file
+```
+awk '/^>/{print (NR==1)?$0:"\n"$0;next}{printf "%s", $0}END{print ""}' merged.uni.c10.140.190.sht.vsc.srt.chi.fasta > merged.uni.c10.140.190.sht.vsc.srt.chi.sin.fasta
+```
+
+25b. create the MOTUs (-d = max distance in nucleotides for 2 sequences to be same; setting at 1 based on Swarm github site advice)
+swarm -d 1 -f -z -t 1 -o merged.uni.c10.140.190.sht.vsc.srt.chi.sin.sw1_output -s merged.uni.c10.140.190.sht.vsc.srt.chi.sin.sw1_stats -w merged.uni.c10.140.190.sht.vsc.srt.chi.sin.sw1.fasta merged.uni.c10.140.190.sht.vsc.srt.chi.sin.fasta
+
+26b. create R script program to recount SWARM reads by OTU and sample.
+
+```
+#!/FILEPATHTOTHESCRIPT/Rscript
+
+## Script for recount abundances of a dataset clustered using Swarm to a tabulated csv file
+## The script will read two arguments from the command line: the input file name (output file from swarm)
+## and the abundances tab file from obitab.
+## The output will be a ".csv" file with recalculated abundances per MOTU and per sample.
+## By Owen S. Wangensteen - Project Metabarpark  2017
+## Modified by Mike Allen, May 15, 2023, so that it would run with his data.
+
+args<-commandArgs(T)
+
+if (length(args)<2) {message("Please enter a cluster list output file obtained from SWARM and a tabulated counts file from obitab.")} else
+{  
+  fileswarm <- args[1] #Must be an output file from swarm 
+  filetab <- args[2] 
+  outfile <-paste(fileswarm,".counts.csv",sep="")   
+  
+  num_char_id <- 9 # changed from 14 by Mike so that it would work with his data
+  min_reads <- 2
+  
+  get_swarm_size <- function(cadena="="){
+    return(as.numeric(substr(cadena,gregexpr("=",cadena)[[1]][[1]]+1,nchar(cadena))))
+  }
+  
+  
+  # Read cluster list database
+  message("Reading swarm database...")
+  swarm_db <- readLines(fileswarm)
+  total_swarms <- length(swarm_db)
+  message("Cluster database read including ", total_swarms," total clusters.")
+  
+  # Calculate reads in each cluster 
+  message("Calculating number of reads in each cluster")
+  clusters <- strsplit(swarm_db," ")
+  for (i in 1:total_swarms) for (j in 1:length(clusters[[i]])) if (substr(clusters[[i]][[j]],nchar(clusters[[i]][[j]]),nchar(clusters[[i]][[j]]))==";"){
+    clusters[[i]][[j]] <- substr(clusters[[i]][[j]],1,nchar(clusters[[i]][[j]])-1)
+  }
+  cluster_reads  <- NULL
+  for (i in 1:total_swarms) cluster_reads[i] <- sum(as.numeric(lapply(X=(clusters[[i]]),FUN=get_swarm_size)))
+  swarm_db_reduced <- swarm_db[cluster_reads>=min_reads]
+  
+  clusters <- strsplit(swarm_db_reduced," ")
+  total_swarms_reduced <- length(swarm_db_reduced)
+  
+  id <- NULL
+  for (i in 1:total_swarms_reduced) for (j in 1:length(clusters[[i]])) {
+    clusters[[i]][[j]] <- substr(clusters[[i]][[j]],1,num_char_id)  
+    id[i] <- clusters[[i]][1]
+  }
+
+  ### inserted by Mike to remove ";" from cluster and sequence names
+  for (i in 1:total_swarms_reduced) { for (j in 1:length(clusters[[i]])) {
+    if (substr(clusters[[i]][[j]],nchar(clusters[[i]][[j]]),nchar(clusters[[i]][[j]]))==";"){
+    clusters[[i]][[j]] <- substr(clusters[[i]][[j]],1,nchar(clusters[[i]][[j]])-1)
+    }
+    if (substr(clusters[[i]][[j]],nchar(clusters[[i]][[j]]),nchar(clusters[[i]][[j]]))=="s"){
+      clusters[[i]][[j]] <- substr(clusters[[i]][[j]],1,nchar(clusters[[i]][[j]])-2)
+    }
+    if (substr(clusters[[i]][[j]],nchar(clusters[[i]][[j]]),nchar(clusters[[i]][[j]]))=="i"){
+      clusters[[i]][[j]] <- substr(clusters[[i]][[j]],1,nchar(clusters[[i]][[j]])-3)
+    }
+    if (substr(clusters[[i]][[j]],nchar(clusters[[i]][[j]]),nchar(clusters[[i]][[j]]))=="z"){
+      clusters[[i]][[j]] <- substr(clusters[[i]][[j]],1,nchar(clusters[[i]][[j]])-4)
+    }
+    if (substr(clusters[[i]][[j]],nchar(clusters[[i]][[j]]),nchar(clusters[[i]][[j]]))=="e"){
+      clusters[[i]][[j]] <- substr(clusters[[i]][[j]],1,nchar(clusters[[i]][[j]])-5)
+    }
+    if (substr(clusters[[i]][[j]],nchar(clusters[[i]][[j]]),nchar(clusters[[i]][[j]]))=="="){
+      clusters[[i]][[j]] <- substr(clusters[[i]][[j]],1,nchar(clusters[[i]][[j]])-6)
+    }
+  }
+    id[i] <- clusters[[i]][1]
+  }
+  ###
+
+  names(clusters) <- id
+
+  message("Kept only ", total_swarms_reduced," clusters of size greater than or equal to ",min_reads," reads.")
+  necesarios <- unlist(clusters, use.names=F)
+  
+  # Read counts database and keep only the needed clusters
+  message("Reading tabulated database. This could take a while...")
+  db <- read.table(filetab,sep="\t",head=T)
+  numseqs <- nrow(db)
+  db <- db[db$id %in% necesarios,]
+  numseqs_reduced <- nrow(db)
+  samples <- length(names(db)[substr(names(db),1,6)=="sample"])
+  message("Database read including ", numseqs," total different sequences and ",samples," samples.")
+  message("Kept only ", numseqs_reduced," sequences for calculations.")
+  
+  db.total <- merge(data.frame(id),db,by="id") #Con esto se queda solo con los heads
+  id <- db.total$id
+  numclust <- nrow(db.total)
+  
+  for (fila in 1:numclust){
+    head <- id[fila]
+    tails <- unlist(clusters[names(clusters)==head])
+    db.reduced <- db[db$id %in% tails,]
+    suma <- colSums(db.reduced[,substr(names(db.total),1,6)=="sample"])
+    db.total[fila,substr(names(db.total),1,6)=="sample"] <- suma
+    db.total$cluster_weight[fila] <- nrow(db.reduced)
+    message("Cluster ", fila, " / ",numclust, " ready, including ", db.total$cluster_weight[fila]," sequences.","\r",appendLF = FALSE)
+  }
+  db.total$total_reads <- rowSums(db.total[,substr(names(db.total),1,6)=="sample"])
+  names(db.total[substr(names(db.total),1,6)=="sample"]) <- substr(names(db.total[substr(names(db.total),1,6)=="sample"]),8,nchar(names(db.total[substr(names(db.total),1,6)=="sample"])))
+  write.table(db.total[,c(1:(ncol(db.total)-3),(ncol(db.total)-1):ncol(db.total),(ncol(db.total)-2))],outfile,sep=",",quote=F,row.names=F)
+message("File ", outfile, " written")
+}
+```
+
+```
+chmod +x f06_owi_recount_swarm
+
+# change the /user/bin/Rscript at the top to your env URL (e.g., /home/USERNAME/miniconda3/envs/ren423/bin/Rscript)
+# also need to change  num_char_id to 9 (from 14) and change the separator character for the output file to a "," 
+# most importantly, a whole chunk of code needs to be inserted into the file to deal with cluster names (see Mike's version)
+```
+27b. recount the SWARM samples by MOTU (also excludes singletons - seqs with total read count = 1 across samples)
+    # note: the .tab file was created in step 19b above.
+```
+f06_owi_recount_swarm merged.uni.c10.140.190.sht.vsc.srt.chi.sin.sw1_output merged.uni.c10.140.190.sht.tab
+```
+28b. fix header of the fasta file (add space between MOTU name and the size variable)
+cp merged.uni.c10.l130.L185.sht.srt.nochi.1line.swarm1.Z.fasta merged.uni.c10.l130.L185.sht.srt.nochi.1line.swarm1.fix.Z.fasta
+sed -i 's/;size=/ size=/g' merged.uni.c10.l130.L185.sht.srt.nochi.1line.swarm1.fix.Z.fasta
+cp merged.uni.c10.l75.L125.sht.srt.nochi.1line.swarm1.C.fasta merged.uni.c10.l75.L125.sht.srt.nochi.1line.swarm1.fix.C.fasta
+sed -i 's/;size=/ size=/g' merged.uni.c10.l75.L125.sht.srt.nochi.1line.swarm1.fix.C.fasta
+cp merged.uni.c10.l140.L190.sht.srt.nochi.1line.swarm1.fasta merged.uni.c10.l140.L190.sht.srt.nochi.1line.swarm1.fix.fasta
+sed -i 's/;size=/ size=/g' merged.uni.c10.l140.L190.sht.srt.nochi.1line.swarm1.fix.fasta
+29. remove singletons from the SWARM fasta file (not necessary, I think, as we already cut seqs w/ <10 reads)
+obigrep -p ‘size>1’ merged.uni.c10.l130.L185.sht.srt.nochi.1line.swarm7.fix.Z.fasta > merged.uni.c10.l130.L185.sht.srt.nochi.1line.swarm7.fix.no1.Z.fasta
+obigrep -p ‘size>1’ merged.uni.c10.l75.L125.sht.srt.nochi.1line.swarm5.fix.C.fasta > merged.uni.c10.l75.L125.sht.srt.nochi.1line.swarm5.fix.no1.C.fasta
 
