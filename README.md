@@ -1334,19 +1334,21 @@ Castor canadensis
 Canis latrans
 Phoca groenlandica
 Globicephala macrorhynchus
+Canis lupus familiaris
+Felis catus
 ```
 9. Subset the reference database using the CRABS function db_subset and the list you just made. Note: same results if you swap the space within the binomials with an underscore.
 ```
 crabs db_subset --input CRABS_Vertebrates_ncbiMitofishLocal.MiFish.pga60.uni.cln.tsv \
 --output CRABS_Vertebrates_ncbiMitofishLocal.MiFish.pga60.uni.cln.njs.tsv \
---database nj_vertebrates_ncbi_underscore.txt --subset inclusion
+--database nj_vertebrates_ncbi.txt --subset inclusion
 
 # add header row to local NJ file
 head CRABS_Vertebrates_ncbiMitofishLocal.MiFish.pga60.uni.cln.tsv -n 1 > tmp.tsv
 
 cat tmp.tsv CRABS_Vertebrates_ncbiMitofishLocal.MiFish.pga60.uni.cln.njs.tsv > CRABS_Vertebrates_ncbiMitofishLocal.MiFish.pga60.uni.cln.njs2.tsv
 
-rm(tmp.tsv)
+rm tmp.tsv
 ```
 9. Make the final CRABS reference database into fasta files in 2 versions: a full version and a NJ subset. Must include a taxid for each entry to work with obitools/ecotag taxonomy assignment. First, using nano, make an R script in the main directory called ref04_crabs2fasta.R with the following code in it:
 ```
@@ -1450,19 +1452,19 @@ obitaxonomy -t taxo -d taxo
 ```
 obigrep -d taxo/taxo --require-rank=species \
   --require-rank=genus --require-rank=family refdb/CRABS_Vertebrates_ncbiMitofishLocal.MiFish.pga60.uni.cln.njs.fasta > refdb/CRABS_Vertebrates_ncbiMitofishLocal.MiFish.pga60.uni.cln2.njs.fasta
-```
-4. Dereplicate reference sequences (also adds full taxonomy to header). Run the following from the main directory:
-```
+#```
+#4. Dereplicate reference sequences (also adds full taxonomy to header). Run the following from the main directory:
+#```
 obiuniq -d taxo/taxo \
   refdb/CRABS_Vertebrates_ncbiMitofishLocal.MiFish.pga60.uni.cln2.njs.fasta > refdb/CRABS_Vertebrates_ncbiMitofishLocal.MiFish.pga60.uni2.cln2.njs.fasta
-```
-5. One more obigrep to ensure all dereplicated sequences have a taxid at the family level. Run from the main directory.
-```
+#```
+#5. One more obigrep to ensure all dereplicated sequences have a taxid at the family level. Run from the main directory.
+#```
 obigrep -d taxo/taxo --require-rank=family \
   refdb/CRABS_Vertebrates_ncbiMitofishLocal.MiFish.pga60.uni2.cln2.njs.fasta > refdb/CRABS_Vertebrates_ncbiMitofishLocal.MiFish.pga60.uni2.cln3.njs.fasta
-```
-6. Annotate reference database with unique IDs by running the following:
-```
+#```
+#6. Annotate reference database with unique IDs by running the following:
+#```
 obiannotate --uniq-id refdb/CRABS_Vertebrates_ncbiMitofishLocal.MiFish.pga60.uni2.cln3.fasta > refdb/CRABS_Vertebrates_ncbiMitofishLocal.MiFish.pga60.uni2.cln3.ann.fasta
 ```
 7. Assign taxonomy to the sequences in your samples using the ecotag "lowest common ancestor" algorithm. Make a bash script with the following text called f07_ecotag.sh and use sbatch to run script from the cluster directory.
