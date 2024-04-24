@@ -410,16 +410,77 @@ mkdir reftax
 ```
 2. Curate any custom reference databases
 Get CUSTOM reference sequences into crabs from your own fasta file (e.g., the Rees fish mitochondria bioproject)
-Note: the first item in the fasta header has to be an accession number or a species name (see crabs github).
+Note: the first item in the fasta header has to be just an accession number or a species name (see crabs github). We will process these files all the way through taxonomy assignment first in the command line so we can see clearly what happens to them.
 
 ```
-conda activate py38 # activate the conda environment with CRABS installed
+# activate the conda environment with CRABS installed
+conda activate py38
+
+# import fasta of Rees fish mitochondrial sequences into CRABS format (likely unnecessary as they are in genbank)
 crabs db_import --input rees.fasta --output custom1.fasta --seq_header accession --delim ' '
-crabs db_import --input Fin_Clip_Species_List_NoFHCF.fasta --output custom2.fasta --seq_header species --delim ' '
-# NOTE: to do: use sed to remove "_12S" from all the sequences so CRABS can read and assign taxonomy
-```
-Download mitochondrial sequences from GenBank, MitoFish, etc. for fish, mammals, and 'herps' (birds, amphibians, reptiles) separately. First create an .sh script called ref01_mifish_fish.sh in your main directory and paste the following into it. Note that you'll need to either customize the code related to the custom reference databases below or else comment them out. GenBank search term tips to customize it (e.g., could just download relevant families): https://otagomohio.github.io/hacky2021/sessions/1005_ncbi/. Note: you'll need to change "your@email.edu" to your own email address to download from GenBank. Start with the fish:
 
+# in silico pcr to get sequences out of combined fish sequence file
+crabs insilico_pcr \
+--input custom1.fasta \
+--output custom1.MiFish.fasta \
+--fwd GTCGGTAAAACTCGTGCCAGC \
+--rev CATAGTGGGGTATCTAATCCCAGTTTG \
+--error 4.5
+
+# pga to exctract more sequences from the combined NCBI data
+crabs pga --input custom1.fasta \
+--output custom1.MiFish.pga60.fasta \
+--database custom1.MiFish.fasta \
+--fwd GTCGGTAAAACTCGTGCCAGC --rev CATAGTGGGGTATCTAATCCCAGTTTG \
+--speed slow --percid 0.60 --coverage 0.95 --filter_method strict
+
+# remove "_12S" from the end of Rutgers eDNA Lab local fish sequence headers
+  # first element of header has to either be just the accession number or just the species name
+sed 's/_12S//g' Fin_Clip_Species_List_NoFHCF.fasta > Fin_Clip_Species_List_NoFHCF.for.fasta 
+
+# import fasta of Rutgers eDNA Lab local fish 12S sequences into CRABS format
+crabs db_import --input Fin_Clip_Species_List_NoFHCF.for.fasta --output custom2.fasta --seq_header species --delim ' '
+
+# in silico pcr to get sequences out of combined fish sequence file
+# first part of mifish primer was cut off: GTCGGTAAAAC
+crabs insilico_pcr \
+--input custom2.fasta \
+--output custom2.MiFish.fasta \
+--fwd TCGTGCCAGC \
+--rev CATAGTGGGGTATCTAATCCCAGTTTG \
+--error 4.5
+
+# pga to exctract more sequences from the combined NCBI data
+  # note: had to use custom1.MiFish.pga60.fasta as the database as PCR revealed nothing
+   # first part of mifish fwd primer was cut off: GTCGGTAAAAC
+crabs pga --input custom2.fasta \
+--output custom2.MiFish.pga60.fasta \
+--database custom2.MiFish.fasta \
+--fwd TCGTGCCAGC --rev CATAGTGGGGTATCTAATCCCAGTTTG \
+--speed slow --percid 0.60 --coverage 0.95 --filter_method strict
+
+sed -i 's/Misgurnus_angullicaudatus/Misgurnus_anguillicaudatus/g' custom2.MiFish.pga60.fasta
+sed -i 's/Anguillla_rostrata/Anguilla_rostrata/g' custom2.MiFish.pga60.fasta
+
+# this next part is just to test if taxonomy assignment works 
+  # i.e., to make sure the sequences don't get put into "missing" file and get lost
+
+crabs db_merge \
+--output custom.MiFish.pga60.merged.test.fasta --uniq yes \
+--input custom1.MiFish.pga60.fasta custom2.MiFish.pga60.fasta
+
+crabs assign_tax \
+--input custom.MiFish.pga60.merged.test.fasta  \
+--output custom.MiFish.pga60.merged.test.tax.tsv \
+--acc2tax nucl_gb.accession2taxid \
+--taxid nodes.dmp \
+--name names.dmp \
+--missing missing_custom.MiFish.pga60.merged.test.tax.tsv
+
+# remove the test files once they have been checked
+rm *.test.*
+```
+3. Download mitochondrial sequences from GenBank, MitoFish, etc. for fish, mammals, and 'herps' (birds, amphibians, reptiles) separately. First create an .sh script called ref01_mifish_fish.sh in your main directory and paste the following into it. Note that you'll need to either customize the code related to the custom reference databases below or else comment them out. GenBank search term tips to customize it (e.g., could just download relevant families): https://otagomohio.github.io/hacky2021/sessions/1005_ncbi/. Note: you'll need to change "your@email.edu" to your own email address to download from GenBank. Start with the fish:
 ```
 #!/bin/bash
 
@@ -463,7 +524,7 @@ crabs db_download \
 # merge NCBI download files into one file (to simplify pga analysis below) - also add in custom local sequences
 crabs db_merge \
 --output CRABS_Fish_ncbi_dl.fasta --uniq yes \
---input CRABS_FishActinopterygii_ncbi_dl.fasta CRABS_FishOthers_ncbi_dl.fasta custom1.fasta custom2.fasta
+--input CRABS_FishActinopterygii_ncbi_dl.fasta CRABS_FishOthers_ncbi_dl.fasta
 
 # merge all fish files into one file to perform in silico pcr on
 crabs db_merge \
@@ -492,7 +553,7 @@ crabs pga --input CRABS_Fish_mitofish_dl.fasta \
 --fwd GTCGGTAAAACTCGTGCCAGC --rev CATAGTGGGGTATCTAATCCCAGTTTG \
 --speed slow --percid 0.60 --coverage 0.95 --filter_method strict
 
-# merge the two pga files together, creating final database of 12SV5 amplicons
+# merge the two pga files together, creating final database of amplicons
 crabs db_merge \
 --output CRABS_Fish_ncbimito_dl.MiFish.pga60.fasta \
 --uniq yes \
@@ -512,7 +573,7 @@ crabs assign_tax \
 --name names.dmp \
 --missing missing_CRABS_Fish_ncbimito_dl.MiFish.pga60.tax.tsv
 ```
-Now make one for mammals (mifish_mam.sh):
+4. Now make one for mammals (mifish_mam.sh):
 ```
 #!/bin/bash
 
@@ -581,7 +642,7 @@ crabs assign_tax \
 --missing missing_CRABS_Mammals_ncbi_dl.MiFish.pga60.tax.tsv
 
 ```
-Now make one for birds/fish/amphibians (mifish_herps.sh):
+5. Now make one for birds/fish/amphibians (mifish_herps.sh):
 ```
 #!/bin/bash
 
@@ -633,70 +694,823 @@ crabs assign_tax \
 --missing missing_CRABS_Herps_ncbi_dl.MiFish.pga60.tax.tsv
 
 ```
-Use sbatch to run each of the scripts you just made from within their respective folder: fish, mam, or herps.
+6. Use sbatch to run each of the scripts you just made from within their respective folder: fish, mam, or herps.
 ```
 cd fish
-sbatch ref01_mifish_fish.sh
+sbatch ../ref01_mifish_fish.sh
+cd herps
+sbatch ../ref02_mifish_herps.sh
+cd mam
+sbatch ../ref03_mifish_mam.sh
 ```
+7. Combine all reference databases and add taxonomy
+```
+conda activate py38
 
+# make directory for taxonomy files (under main directory)
+mkdir crabtax
+cd crabtax
 
+# download taxonomy files to it
+crabs db_download --source taxonomy
 
-# ... below here is really unfinished
+# navigate back to main directory
+cd ..
+mkdir refdb
 
+# merge NCBI/mitofish/local pga (amplicon) files for all taxa into one file for taxonomy assignment
+  # doing this in 2 steps so that --uniq yes can be used for those with unique accession numbers
+    # 2nd custom sequences file imported into CRABS by species name had potential for duplicate names (even if diff seq)
+      # maybe this isn't necessary if CRABS makes a unique accession ID for species-based imports
+crabs db_merge \
+--output refdb/CRABS_Vertebrates_ncbiMitofishLocal.MiFish.pga60.step1.fasta --uniq yes \
+--input herps/CRABS_Herps_ncbi_dl.MiFish.pga60.fasta mam/CRABS_Mammals_ncbi_dl.MiFish.pga60.fasta fish/CRABS_Fish_ncbimito_dl.MiFish.pga60.fasta fish/custom1.MiFish.pga60.fasta 
 
+crabs db_merge \
+--output refdb/CRABS_Vertebrates_ncbiMitofishLocal.MiFish.pga60.fasta \
+--input refdb/CRABS_Vertebrates_ncbiMitofishLocal.MiFish.pga60.step1.fasta fish/custom2.MiFish.pga60.fasta
 
+rm refdb/CRABS_Vertebrates_ncbiMitofishLocal.MiFish.pga60.step1.fasta
 
+# create final amplicon table with taxonomy
+# add records that didn't match a taxon to the "missing" file to be reviewed later 
+crabs assign_tax \
+--input refdb/CRABS_Vertebrates_ncbiMitofishLocal.MiFish.pga60.fasta  \
+--output refdb/CRABS_Vertebrates_ncbiMitofishLocal.MiFish.pga60.tsv \
+--acc2tax crabtax/nucl_gb.accession2taxid \
+--taxid crabtax/nodes.dmp \
+--name crabtax/names.dmp \
+--missing refdb/missing_CRABS_Vertebrates_ncbiMitofishLocal.MiFish.pga60.tsv
 
+# dereplicate
+crabs dereplicate --input refdb/CRABS_Vertebrates_ncbiMitofishLocal.MiFish.pga60.tsv \
+--output refdb/CRABS_Vertebrates_ncbiMitofishLocal.MiFish.pga60.uni.tsv --method uniq_species
 
+# cleanup
+crabs seq_cleanup --input refdb/CRABS_Vertebrates_ncbiMitofishLocal.MiFish.pga60.uni.tsv \
+--output refdb/CRABS_Vertebrates_ncbiMitofishLocal.MiFish.pga60.uni.cln.tsv \
+--minlen 100 --maxlen 300 --maxns 10 --enviro yes --species yes
 
-22. assign taxonomy to the reference database
-crabs assign_tax --input ncbi.bold.art.hum.mus.may23.pcr.pga.C.fasta --output ncbi.bold.art.hum.mus.may23.pcr.pga.C.tsv --acc2tax ../crabtaxo/nucl_gb.accession2taxid --taxid ../crabtaxo/nodes.dmp --name ../crabtaxo/names.dmp --missing missing_taxa.tsv
-crabs assign_tax --input ncbi.bold.art.hum.mus.may23.pcr.pga.Z.fasta --output ncbi.bold.art.hum.mus.may23.pcr.pga.Z.tsv --acc2tax ../crabtaxo/nucl_gb.accession2taxid --taxid ../crabtaxo/nodes.dmp --name ../crabtaxo/names.dmp --missing missing_taxa.tsv
-crabs assign_tax --input combined.fish.reference.may23.pcr.pga--output combined.fish.reference.may23.pcr.pga.tax.tsv --acc2tax ../crabtax/nucl_gb.accession2taxid --taxid ../crabtaxo/nodes.dmp --name ../crabtaxo/names.dmp --missing missing_taxa.tsv
-23. remove extra duplicate columns added by assign_tax due to our splitting/recombining
-    # note: counts the number of columns & keeps only the first 10 columns
-    # note: might not be needed in all cases
-awk '{print NF}' combined.fish.reference.may23.pcr.sin.pga.tax.tsv | sort -nu | tail -n 1
-cut -f -10 combined.fish.reference.may23.pcr.sin.pga.tax.tsv > combined.fish.reference.may23.pcr.sin.pga.tax.fix.tsv
-24. dereplicate reference sequences
-crabs dereplicate --input ncbi.bold.art.hum.mus.may23.pcr.pga.tax.Z.tsv --output ncbi.bold.art.hum.mus.may23.pcr.pga.tax.uni.Z.tsv --method uniq_species
-crabs dereplicate --input combined.fish.reference.may23.pcr.sin.pga.tax.fix.tsv --output combined.fish.reference.may23.pcr.sin.pga.tax.fix.uni.tsv --method uniq_species
-25. clean up remaining sequences
-crabs seq_cleanup --input ncbi.bold.art.hum.mus.may23.pcr.pga.tax.uni.C.tsv --output ncbi.bold.art.hum.mus.may23.pcr.pga.tax.uni.fix.cln.C.tsv --minlen 25 --maxlen 500 --maxns 0 --enviro yes --species yes --nans 0
-crabs seq_cleanup --input ncbi.bold.art.hum.mus.may23.pcr.pga.tax.uni.Z.tsv --output ncbi.bold.art.hum.mus.may23.pcr.pga.tax.uni.cln.Z.tsv --minlen 25 --maxlen 500 --maxns 0 --enviro yes --species yes --nans 0
-crabs seq_cleanup --input ncbi.bold.art.hum.mus.may23.pcr.pga.tax.uni.C.tsv --output ncbi.bold.art.hum.mus.may23.pcr.pga.tax.uni.cln.C.tsv --minlen 25 --maxlen 500 --species yes
-crabs seq_cleanup --input combined.fish.reference.may23.pcr.sin.pga.tax.fix.uni.tsv --output combined.fish.reference.may23.pcr.sin.pga.tax.fix.uni.cln.tsv --minlen 25 --maxlen 500 --species yes
-26. use R to convert tsv to obitools-compatible fasta using script adapted from Owen W;
-header should be ~: >GBMOR2153-19 species_name=Schistocerca americana; rank=species; origin = bld_gb; taxid=7009;
-# the script "crabs2ecotag.Rmd" works for now, but only outside of the cluster
-# NOTE: at this stage you can also filter your reference database based on geography (in R) see inspect_ref_db.R
-    # for example, for fish, we extracted just those fish found in NY/NJ/PA + exotics + non-fish vertebrates
-27. download taxonomy from NCBI for obitools pipeline into new TAXO folder 
-    # note: it can't hurt to redownload as errors are possible when using older taxonomy databases
-mkdir TAXO/
-cd TAXO/
+```
+8. Make a version that is a subset of only local NJ species. First, make a text file with a list of all the vertebrate species found in New Jersey. This list was compiled from 4 websites: 
+https://dep.nj.gov/njfw/fishing/freshwater/freshwater-fish-of-new-jersey/
+https://dep.nj.gov/njfw/education/online-field-guide-for-reptiles-and-amphibians/
+https://www.nj.gov/dep/fgw/chkbirds.htm
+https://www.nj.gov/dep/fgw/chkmamls.htm
+
+The lists were pasted into a csv file and processed using the make_nj_vert_list.R script, including aligning with NCBI taxonomy using the align_taxonomy function found in the align_taxonomy.R file. Both scripts are found in the "R" directory of this repository. Paste the list below into a new text file called nj_vertebrates_ncbi.txt.
+```
+Glyptemys muhlenbergii
+Graptemys geographica
+Sternotherus odoratus
+Chelydra serpentina
+Malaclemys terrapin
+Terrapene carolina
+Kinosternon subrubrum
+Chrysemys picta
+Apalone spinifera
+Pseudemys rubriventris
+Trachemys scripta
+Clemmys guttata
+Glyptemys insculpta
+Plestiodon fasciatus
+Scincella lateralis
+Sceloporus undulatus
+Pantherophis obsoletus
+Pantherophis guttatus
+Thamnophis sirtalis
+Heterodon platirhinos
+Lampropeltis getula
+Lampropeltis triangulum
+Thamnophis saurita
+Virginia valeriae
+Carphophis amoenus
+Coluber constrictor
+Storeria dekayi
+Agkistrodon contortrix
+Pituophis melanoleucus
+Storeria occipitomaculata
+Diadophis punctatus
+Cemophora coccinea
+Nerodia sipedon
+Regina septemvittata
+Opheodrys aestivus
+Opheodrys vernalis
+Crotalus horridus
+Ambystoma laterale
+Pseudotriton montanus
+Ambystoma tigrinum
+Hemidactylium scutatum
+Ambystoma jeffersonianum
+Eurycea longicauda
+Ambystoma opacum
+Desmognathus ochrophaeus
+Desmognathus fuscus
+Pseudotriton ruber
+Plethodon glutinosus
+Gyrinophilus porphyriticus
+Eurycea bislineata
+Plethodon cinereus
+Notophthalmus viridescens
+Ambystoma maculatum
+Anaxyrus americanus
+Aquarana catesbeiana
+Lithobates virgatipes
+Scaphiopus holbrookii
+Anaxyrus woodhousii
+Lithobates clamitans
+Pseudacris triseriata
+Acris crepitans
+Dryophytes versicolor
+Pseudacris crucifer
+Lithobates palustris
+Dryophytes andersonii
+Dryophytes chrysoscelis
+Lithobates sphenocephalus
+Lithobates sylvaticus
+Gavia stellata
+Gavia immer
+Podilymbus podiceps
+Podiceps auritus
+Podiceps grisegena
+Calonectris diomedea
+Ardenna gravis
+Ardenna grisea
+Oceanites oceanicus
+Oceanodroma leucorhoa
+Morus bassanus
+Pelecanus occidentalis
+Phalacrocorax carbo
+Phalacrocorax auritus
+Ixobrychus exilis
+Ardea herodias
+Ardea alba
+Egretta thula
+Egretta caerulea
+Egretta tricolor
+Bubulcus ibis
+Butorides striata
+Nycticorax nycticorax
+Plegadis falcinellus
+Dendrocygna bicolor
+Cygnus columbianus
+Cygnus olor
+Anser caerulescens
+Branta bernicla
+Branta canadensis
+Aix sponsa
+Anas crecca
+Anas rubripes
+Anas platyrhynchos
+Anas acuta
+Spatula discors
+Mareca strepera
+Mareca penelope
+Mareca americana
+Aythya valisineria
+Aythya americana
+Aythya collaris
+Aythya marila
+Aythya affinis
+Somateria mollissima
+Somateria spectabilis
+Histrionicus histrionicus
+Clangula hyemalis
+Melanitta nigra
+Melanitta perspicillata
+Melanitta fusca
+Bucephala clangula
+Bucephala albeola
+Lophodytes cucullatus
+Mergus merganser
+Mergus serrator
+Oxyura jamaicensis
+Coragyps atratus
+Cathartes aura
+Pandion haliaetus
+Ictinia mississippiensis
+Haliaeetus leucocephalus
+Circus cyaneus
+Accipiter striatus
+Accipiter cooperii
+Accipiter gentilis
+Buteo lineatus
+Buteo platypterus
+Buteo jamaicensis
+Buteo lagopus
+Aquila chrysaetos
+Falco sparverius
+Falco columbarius
+Falco peregrinus
+Phasianus colchicus
+Bonasa umbellus
+Meleagris gallopavo
+Alectoris graeca
+Colinus virginianus
+Coturnicops noveboracensis
+Laterallus jamaicensis
+Rallus longirostris
+Rallus elegans
+Porzana carolina
+Gallinula chloropus
+Fulica americana
+Pluvialis squatarola
+Pluvialis dominica
+Charadrius semipalmatus
+Charadrius melodus
+Charadrius vociferus
+Haematopus palliatus
+Himantopus mexicanus
+Recurvirostra americana
+Tringa melanoleuca
+Tringa flavipes
+Tringa solitaria
+Tringa semipalmata
+Actitis macularius
+Bartramia longicauda
+Numenius phaeopus
+Limosa haemastica
+Limosa fedoa
+Arenaria interpres
+Calidris canutus
+Calidris alba
+Calidris pusilla
+Calidris mauri
+Calidris minutilla
+Calidris fuscicollis
+Calidris bairdii
+Calidris melanotos
+Calidris maritima
+Calidris alpina
+Calidris ferruginea
+Calidris himantopus
+Calidris subruficollis
+Calidris pugnax
+Limnodromus griseus
+Limnodromus scolopaceus
+Gallinago gallinago
+Phalaropus tricolor
+Phalaropus lobatus
+Stercorarius pomarinus
+Stercorarius parasiticus
+Stercorarius longicaudus
+Leucophaeus atricilla
+Hydrocoloeus minutus
+Chroicocephalus ridibundus
+Larus philadelphia
+Larus delawarensis
+Larus argentatus
+Larus glaucoides
+Larus fuscus
+Larus hyperboreus
+Larus marinus
+Rissa tridactyla
+Gelochelidon nilotica
+Hydroprogne caspia
+Thalasseus maximus
+Sterna dougallii
+Sterna hirundo
+Sterna forsteri
+Sternula antillarum
+Rynchops niger
+Alle alle
+Uria lomvia
+Alca torda
+Columba livia
+Zenaida macroura
+Coccyzus erythropthalmus
+Coccyzus americanus
+Tyto alba
+Megascops asio
+Bubo virginianus
+Bubo scandiacus
+Strix varia
+Asio otus
+Asio flammeus
+Aegolius acadicus
+Chordeiles minor
+Antrostomus carolinensis
+Antrostomus vociferus
+Chaetura pelagica
+Archilochus colubris
+Megaceryle alcyon
+Melanerpes erythrocephalus
+Melanerpes carolinus
+Sphyrapicus varius
+Dryobates pubescens
+Picoides villosus
+Colaptes auratus
+Dryocopus pileatus
+Contopus virens
+Empidonax flaviventris
+Empidonax virescens
+Empidonax alnorum
+Empidonax traillii
+Empidonax minimus
+Sayornis phoebe
+Myiarchus crinitus
+Tyrannus verticalis
+Tyrannus tyrannus
+Eremophila alpestris
+Progne subis
+Tachycineta bicolor
+Stelgidopteryx serripennis
+Riparia riparia
+Petrochelidon pyrrhonota
+Hirundo rustica
+Cyanocitta cristata
+Corvus brachyrhynchos
+Corvus ossifragus
+Corvus corax
+Poecile carolinensis
+Poecile hudsonicus
+Baeolophus bicolor
+Sitta canadensis
+Sitta carolinensis
+Certhia americana
+Thryothorus ludovicianus
+Troglogytes aedon
+Troglodytes troglodytes
+Cistothorus platensis
+Cistothorus palustris
+Regulus satrapa
+Regulus calendula
+Polioptila caerulea
+Sialia sialis
+Catharus fuscescens
+Catharus minimus
+Catharus ustulatus
+Catharus guttatus
+Hylocichla mustelina
+Turdus migratorius
+Dumetella carolinensis
+Mimus polyglottos
+Toxostoma rufum
+Anthus rubescens
+Bombycilla cedrorum
+Lanius excubitor
+Lanius ludovicianus
+Sturnus vulgaris
+Vireo griseus
+Vireo solitarius
+Vireo flavifrons
+Vireo gilvus
+Vireo philadelphicus
+Vireo olivaceus
+Vermivora cyanoptera
+Vermivora chrysoptera
+Leiothlypis peregrina
+Leiothlypis celata
+Setophaga americana
+Setophaga petechia
+Setophaga pensylvanica
+Setophaga magnolia
+Setophaga tigrina
+Setophaga caerulescens
+Setophaga coronata
+Setophaga virens
+Setophaga fusca
+Setophaga dominica
+Setophaga pinus
+Setophaga discolor
+Setophaga palmarum
+Setophaga castanea
+Setophaga striata
+Setophaga cerulea
+Mniotilta varia
+Setophaga ruticilla
+Protonotaria citrea
+Helmitheros vermivorum
+Seiurus aurocapilla
+Parkesia noveboracensis
+Parkesia motacilla
+Geothlypis formosa
+Oporornis agilis
+Geothlypis philadelphia
+Geothlypis trichas
+Setophaga citrina
+Cardellina pusilla
+Cardellina canadensis
+Icteria virens
+Piranga rubra
+Piranga olivacea
+Cardinalis cardinalis
+Pheucticus ludovicianus
+Passerina caerulea
+Passerina cyanea
+Spiza americana
+Pipilo erythrophthalmus
+Spizelloides arborea
+Spizella passerina
+Spizella pusilla
+Pooecetes gramineus
+Chondestes grammacus
+Passerculus sandwichensis
+Ammodramus savannarum
+Centronyx henslowii
+Ammospiza caudacuta
+Ammodramus nelsoni
+Passerella iliaca
+Melospiza melodia
+Melospiza lincolnii
+Melospiza georgiana
+Zonotrichia albicollis
+Zonotrichia leucophrys
+Junco hyemalis
+Calcarius lapponicus
+Dolichonyx oryzivorus
+Agelaius phoeniceus
+Sturnella magna
+Euphagus carolinus
+Quiscalus major
+Quiscalus quiscula
+Molothrus ater
+Icterus spurius
+Icterus galbula
+Pinicola enucleator
+Haemorhous purpureus
+Haemorhous mexicanus
+Loxia curvirostra
+Loxia leucoptera
+Acanthis flammea
+Spinus pinus
+Spinus tristis
+Passer domesticus
+Alosa pseudoharengus
+Lethenteron appendix
+Anguilla rostrata
+Alosa sapidissima
+Monopterus albus
+Salmo salar
+Acipenser oxyrinchus
+Fundulus diaphanus
+Enneacanthus obesus
+Hypophthalmichthys nobilis
+Ameiurus melas
+Pomoxis nigromaculatus
+Enneacanthus chaetodon
+Rhinichthys atratulus
+Alosa aestivalis
+Lepomis macrochirus
+Enneacanthus gloriosus
+Amia calva
+Notropis bifrenatus
+Culaea inconstans
+Salvelinus fontinalis
+Ameiurus nebulosus
+Salmo trutta
+Esox niger
+Ictalurus punctatus
+Notropis amoenus
+Cyprinus carpio
+Luxilus cornutus
+Semotilus atromaculatus
+Erimyzon oblongus
+Exoglossum maxillingua
+Gambusia holbrooki
+Umbra pygmaea
+Hybognathus regius
+Semotilus corporalis
+Pimephales promelas
+Pylodictis olivaris
+Dorosoma cepedianum
+Notemigonus crysoleucas
+Carassius auratus
+Ctenopharyngodon idella
+Lepomis cyanellus
+Alosa mediocris
+Trinectes maculatus
+Notropis chalybaeus
+Salvelinus namaycush
+Micropterus salmoides
+Rhinichthys cataractae
+Lepisosteus osseus
+Noturus insignis
+Acantharchus pomotis
+Fundulus heteroclitus
+Esox masquinongy
+Hypentelium nigricans
+Esox lucius
+Channa argus
+Misgurnus anguillicaudatus
+Aphredoderus sayanus
+Lepomis gibbosus
+Carpiodes cyprinus
+Osmerus mordax
+Oncorhynchus mykiss
+Lepomis auritus
+Esox americanus
+Ambloplites rupestris
+Cyprinella analostana
+Petromyzon marinus
+Percina peltata
+Acipenser brevirostrum
+Cottus cognatus
+Micropterus dolomieu
+Cyprinella spiloptera
+Notropis hudsonius
+Morone saxatilis
+Notropis procne
+Etheostoma fusiforme
+Noturus gyrinus
+Etheostoma olmstedi
+Sander vitreus
+Lepomis gulosus
+Gambusia affinis
+Ameiurus catus
+Pomoxis annularis
+Morone americana
+Catostomus commersonii
+Ameiurus natalis
+Perca flavescens
+Botaurus lentiginosus
+Nyctanassa violacea
+Spatula clypeata
+Elanoides forficatus
+Rallus limicola
+Porphyrio martinica
+Scolopax minor
+Phalaropus fulicarius
+Chlidonias niger
+Contopus cooperi
+Poecile atricapillus
+Leiothlypis ruficapilla
+Ammospiza maritima
+Plectrophenax nivalis
+Hesperiphona vespertina
+Didelphis marsupialis
+Sorex cinereus
+Sorex palustris
+Sorex fumeus
+Sorex dispar
+Blarina brevicauda
+Parascalops breweri
+Scalopus aquaticus
+Condylura cristata
+Myotis lucifugus
+Myotis sodalis
+Myotis septentrionalis
+Myotis leibii
+Lasionycteris noctivagans
+Perimyotis subflavus
+Eptesicus fuscus
+Lasiurus borealis
+Dasypterus intermedius
+Aeorestes cinereus
+Sylvilagus floridanus
+Sylvilagus transitionalis
+Lepus capensis
+Lepus californicus
+Lepus townsendii
+Tamias striatus
+Marmota monax
+Sciurus carolinensis
+Tamiasciurus hudsonicus
+Glaucomys volans
+Glaucomys sabrinus
+Myocastor coypus
+Oryzomys palustris
+Peromyscus leucopus
+Neotoma floridana
+Clethrionomys gapperi
+Microtus pennsylvanicus
+Microtus pinetorum
+Ondatra zibethicus
+Synaptomys cooperi
+Rattus rattus
+Rattus norvegicus
+Mus musculus
+Napaeozapus insignis
+Zapus hudsonius
+Erethizon dorsatum
+Vulpes vulpes
+Urocyon cinereoargenteus
+Ursus americanus
+Procyon lotor
+Mustela erminea
+Mustela frenata
+Neogale vison
+Mephitis mephitis
+Lontra canadensis
+Lynx rufus
+Odocoileus virginianus
+Phoca vitulina
+Halichoerus grypus
+Cystophora cristata
+Ziphius cavirostris
+Mesoplodon densirostris
+Mesoplodon europaeus
+Mesoplodon mirus
+Physeter catodon
+Kogia breviceps
+Kogia sima
+Delphinapterus leucas
+Stenella frontalis
+Stenella plagiodon
+Stenella coeruleoalba
+Delphinus delphis
+Tursiops truncatus
+Orcinus orca
+Grampus griseus
+Globicephala melas
+Phocoena phocoena
+Balaenoptera physalus
+Balaenoptera borealis
+Balaenoptera acutorostrata
+Balaenoptera musculus
+Megaptera novaeangliae
+Eubalaena glacialis
+Homo sapiens
+Bos taurus
+Ovis aries
+Gallus gallus
+Capra hircus
+Equus caballus
+Sus scrofa
+Sorex cinereus
+Cryptotis parvus
+Sorex hoyi
+Castor canadensis
+Canis latrans
+Phoca groenlandica
+Globicephala macrorhynchus
+```
+9. Subset the reference database using the CRABS function db_subset and the list you just made. Note: same results if you swap the space within the binomials with an underscore.
+```
+crabs db_subset --input CRABS_Vertebrates_ncbiMitofishLocal.MiFish.pga60.uni.cln.tsv \
+--output CRABS_Vertebrates_ncbiMitofishLocal.MiFish.pga60.uni.cln.njs.tsv \
+--database nj_vertebrates_ncbi_underscore.txt --subset inclusion
+
+# add header row to local NJ file
+head CRABS_Vertebrates_ncbiMitofishLocal.MiFish.pga60.uni.cln.tsv -n 1 > tmp.tsv
+
+cat tmp.tsv CRABS_Vertebrates_ncbiMitofishLocal.MiFish.pga60.uni.cln.njs.tsv > CRABS_Vertebrates_ncbiMitofishLocal.MiFish.pga60.uni.cln.njs2.tsv
+
+rm(tmp.tsv)
+```
+9. Make the final CRABS reference database into fasta files in 2 versions: a full version and a NJ subset. Must include a taxid for each entry to work with obitools/ecotag taxonomy assignment. First, using nano, make an R script in the main directory called ref04_crabs2fasta.R with the following code in it:
+```
+# input the path to the full CRABS output reference file
+crab_db_filepath_fulldb <- "refdb/CRABS_Vertebrates_ncbiMitofishLocal.MiFish.pga60.uni.cln.tsv"
+
+# input the path to the NJ subset CRABS output reference file
+crab_db_filepath_fulldb <- "refdb/CRABS_Vertebrates_ncbiMitofishLocal.MiFish.pga60.uni.cln.njs.tsv"
+
+# Define names for the full reference output file
+output_ref_db_fulldb <- "refdb/CRABS_Vertebrates_ncbiMitofishLocal.MiFish.pga60.uni.cln.fasta"
+
+# Define names for the NJ subset reference output file
+output_ref_db <- "refdb/CRABS_Vertebrates_ncbiMitofishLocal.MiFish.pga60.uni.cln.njs.fasta"
+
+# load packages
+library(dplyr)
+library(data.table)
+
+###
+# Make fasta file from full vertebrate reference db
+###
+
+# Load the database and add the taxonomic ranks
+crab_db <- fread(crab_db_filepath_fulldb, sep="\t", head=T) %>%
+  mutate(species = ifelse(species=="", "NA", species))
+
+# Delete previous files
+db_ref_file <- file(output_ref_db_fulldb,open = "wt")
+
+closeAllConnections()
+
+# Loop to write reference fasta file that will work with ecotag
+showlines <- 1000
+
+for (i in 1:nrow(crab_db)) {
+
+        # write it in db_file
+        output_file <- file(output_ref_db_fulldb, open = "at")
+        writeLines(text = paste(">",as.character(crab_db$seqID[i])," species_name=",gsub(as.character(crab_db$species[i]),pattern="_",replacement = " "),
+                                "; taxid=",as.integer(crab_db$taxid[i]),";",sep=""),
+                   con = output_file)
+        writeLines(text = gsub("-","",as.character(crab_db$sequence[i])), con = output_file)
+        close(output_file)
+
+  if (i %% showlines == 0) message(i,"/",nrow(crab_db)," sequences processed.","\r",appendLF = FALSE)
+}
+
+####
+# Now make the NJ subset reference database fasta file
+###
+
+# Load the database and add the taxonomic ranks
+crab_db <- fread(crab_db_filepath, sep="\t", head=T) %>%
+  mutate(species = ifelse(species=="", "NA", species))
+
+# Delete previous files
+db_ref_file <- file(output_ref_db,open = "wt")
+
+closeAllConnections()
+
+# Loop to write reference fasta file that will work with ecotag
+showlines <- 1000
+
+for (i in 1:nrow(crab_db)) {
+
+        # write it in db_file
+        output_file <- file(output_ref_db, open = "at")
+        writeLines(text = paste(">",as.character(crab_db$seqID[i])," species_name=",gsub(as.character(crab_db$species[i]),pattern="_",replacement = " "),
+                                "; taxid=",as.integer(crab_db$taxid[i]),";",sep=""),
+                   con = output_file)
+        writeLines(text = gsub("-","",as.character(crab_db$sequence[i])), con = output_file)
+        close(output_file)
+
+  if (i %% showlines == 0) message(i,"/",nrow(crab_db)," sequences processed.","\r",appendLF = FALSE)
+}
+```
+Next, edit the first two file paths to the correct ones for your reference database CRABS and the desired output file name. Now, run the script using the following commands from the main directory:
+```
+# activate conda environment with R installed
+conda activate ren423
+
+# run the script
+Rscript ref04_crabs2fasta.R
+```
+# Taxonomy assignment with ecotag
+This section reformats the reference database in obitools/EcoPCR format and performs taxonomy assignment using the ecotag algorithm. It might best be placed all in one .sh file and run as a batch.
+
+1. Make a new directory within the main directory called taxo and download NCBI files. These will be used for assigning taxonomy with obitools/ecotag. Note: it can't hurt to redownload when in doubt as errors are possible when using older taxonomy databases.
+```
+mkdir taxo
+cd taxo
 wget ftp://ftp.ncbi.nih.gov/pub/taxonomy/taxdump.tar.gz
 tar -xvf taxdump.tar.gz
-28. format NCBI taxonomy into obitools/ecoPCR format by running obitaxonomy.sh
-obitaxonomy -t TAXO -d TAXO 
-29. clean the ref database by running obigrep.ref1.sh (keeps only those ID'd to family level)
-    # note: some of steps 29-32 may be unnecessary, but it at least serves to get it into obi format for ecotag
-cd refs
-obigrep -d ../TAXO/TAXO --require-rank=species \
-  --require-rank=genus --require-rank=family ncbi.bold.art.hum.mus.may23.pcr.pga.tax.uni.cln.C.fasta > ncbi.bold.art.hum.mus.may23.pcr.pga.tax.uni.cln2.C.fasta
-obigrep -d ../TAXO/TAXO --require-rank=species \
-  --require-rank=genus --require-rank=family combined.fish.reference.may23.pcr.sin.pga.tax.fix.uni.cln.fasta > combined.fish.reference.may23.pcr.sin.pga.tax.fix.uni.cln2.fasta
-30. dereplicate reference sequences by running obiuni.ref.sh (also adds full taxonomy to header)
-obiuniq -d ../TAXO/TAXO \
-  ncbi.bold.art.hum.mus.may23.pcr.pga.tax.uni.cln2.C.fasta > ncbi.bold.art.hum.mus.may23.pcr.pga.tax.uni.cln2.uni.C.fasta
-31. ensure that the dereplicated sequences have a taxid at the family level by running obigrep.ref2.sh
-obigrep -d ../TAXO2/TAXO2 --require-rank=family \
-  ncbi.bold.art.hum.mus.may23.pcr.pga.tax.uni.cln2.uni.C.fasta > ncbi.bold.art.hum.mus.may23.pcr.pga.tax.uni.cln2.uni.cln.C.fasta
-obigrep -d ../TAXO/TAXO --require-rank=family \
-  combined.fish.reference.may23.pcr.sin.pga.tax.fix.uni.cln2.uni.fasta > combined.fish.reference.may23.pcr.sin.pga.tax.fix.uni.cln2.uni.cln.fasta
-32. annotate reference database with unique IDs by running obiann.ref.sh
-    # note: probably could run this one without a shell script
-obiannotate --uniq-id ncbi.bold.art.hum.mus.may23.pcr.pga.tax.uni.cln2.uni.cln.C.fasta > ncbi.bold.art.hum.mus.may23.pcr.pga.tax.uni.cln2.uni.cln.ann.C.fasta
-obiannotate --uniq-id combined.fish.reference.may23.pcr.sin.pga.tax.fix.uni.cln2.uni.cln.fasta > combined.fish.reference.may23.pcr.sin.pga.tax.fix.uni.cln2.uni.cln.ann.fasta
-obiannotate --uniq-id NJ_plus_exotics_local.fish.reference.may23.pcr.sin.pga.tax.fix.uni.cln2.uni.cln.fasta > NJ_plus_exotics_local.fish.reference.may23.pcr.sin.pga.tax.fix.uni.cln2.uni.cln.ann.fasta
+```
+2. Make an obitools/ecoPCR taxonomy database by running the following from within taxo directory:
+```
+obitaxonomy -t taxo -d taxo 
+```
+3. Clean the reference database by running obigrep.ref1.sh (keeps only those ID'd to species, genus, family level). Run from the main directory.
+```
+obigrep -d taxo/taxo --require-rank=species \
+  --require-rank=genus --require-rank=family refdb/CRABS_Vertebrates_ncbiMitofishLocal.MiFish.pga60.uni.cln.njs.fasta > refdb/CRABS_Vertebrates_ncbiMitofishLocal.MiFish.pga60.uni.cln2.njs.fasta
+```
+4. Dereplicate reference sequences (also adds full taxonomy to header). Run the following from the main directory:
+```
+obiuniq -d taxo/taxo \
+  refdb/CRABS_Vertebrates_ncbiMitofishLocal.MiFish.pga60.uni.cln2.njs.fasta > refdb/CRABS_Vertebrates_ncbiMitofishLocal.MiFish.pga60.uni2.cln2.njs.fasta
+```
+5. One more obigrep to ensure all dereplicated sequences have a taxid at the family level. Run from the main directory.
+```
+obigrep -d taxo/taxo --require-rank=family \
+  refdb/CRABS_Vertebrates_ncbiMitofishLocal.MiFish.pga60.uni2.cln2.njs.fasta > refdb/CRABS_Vertebrates_ncbiMitofishLocal.MiFish.pga60.uni2.cln3.njs.fasta
+```
+6. Annotate reference database with unique IDs by running the following:
+```
+obiannotate --uniq-id refdb/CRABS_Vertebrates_ncbiMitofishLocal.MiFish.pga60.uni2.cln3.fasta > refdb/CRABS_Vertebrates_ncbiMitofishLocal.MiFish.pga60.uni2.cln3.ann.fasta
+```
+7. Assign taxonomy to the sequences in your samples using the ecotag "lowest common ancestor" algorithm. Make a bash script with the following text called f07_ecotag.sh and use sbatch to run script from the cluster directory.
+```
+#!/bin/bash
 
+#SBATCH --partition=main
+#SBATCH --requeue
+#SBATCH --job-name=ecotag
+#SBATCH --nodes=1
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=24
+#SBATCH --mem=95GB
+#SBATCH --time=1-10:00:00
+#SBATCH -o %N_%j.ecotag.out
+#SBATCH -e %N_%j.ecotag.err
+
+ecotag -d ../taxo/taxo -R ../refdb/CRABS_Vertebrates_ncbiMitofishLocal.MiFish.pga60.uni2.cln3.njs.ann.fasta \
+merged.uni.c10.140.190.sht.vsc.srt.chi.sin.sw1.fix.fasta > \
+merged.uni.c10.140.190.sht.vsc.srt.chi.sin.sw1.fix.tax.njs.fasta
+
+ecotag -d ../taxo/taxo -R ../refdb/CRABS_Vertebrates_ncbiMitofishLocal.MiFish.pga60.uni2.cln3.njs.ann.fasta \
+merged.uni.c0.140.190.sht.vsc.srt.chi.sin.sw1.fix.no1.fasta > \
+merged.uni.c0.140.190.sht.vsc.srt.chi.sin.sw1.fix.no1.tax.njs.fasta
+
+# Remove unneeded fields from the header by running obiannotate_final.sh
+    # note: I deleted extra stuff in the below script (while troubleshooting); see wolf tutorial for defaults
+    # note: If running SWARM way, delete count as "size" is the important variable; otherwise DON'T delete count!
+    
+obiannotate  --delete-tag=scientific_name_by_db --delete-tag=obiclean_samplecount \
+--delete-tag=obiclean_count --delete-tag=obiclean_singletoncount \
+--delete-tag=obiclean_cluster --delete-tag=obiclean_internalcount \
+--delete-tag=obiclean_head --delete-tag=taxid_by_db --delete-tag=obiclean_headcount \
+--delete-tag=id_status --delete-tag=rank_by_db \
+--delete-tag=order merged.uni.c10.140.190.sht.vsc.srt.chi.sin.sw1.fix.tax.njs.fasta > \
+merged.uni.c10.140.190.sht.vsc.srt.chi.sin.sw1.fix.tax.njs.ann.fasta
+
+# Sort file by total read count. 
+# Note: if you skipped the steps for clustering with Swarm, then the first argument would be count instead of size
+
+obisort -k size -r merged.uni.c10.140.190.sht.vsc.srt.chi.sin.sw1.fix.tax.njs.ann.fasta >  \
+merged.uni.c10.140.190.sht.vsc.srt.chi.sin.sw1.fix.tax.njs.ann.srt.fasta
+
+# Export MOTU read count table by running the following code in the command line.
+
+obitab -o merged.uni.c10.140.190.sht.vsc.srt.chi.sin.sw1.fix.tax.njs.ann.srt.fasta > \
+FishIBI.2023.final.MOTU.table.MiFish.tsv
+```
+
+8. download the tsv file and use process_tabs.Rmd script to do post processing (checking negatives, etc). 
+If you ran the SWARM pathway, then you'll also need to download the *count.csv file and join it to the tsv using the MOTU id (or the sequence). Scripts for this are in process_tabs.Rmd as well
