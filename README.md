@@ -1448,26 +1448,7 @@ tar -xvf taxdump.tar.gz
 ```
 obitaxonomy -t taxo -d taxo 
 ```
-3. Clean the reference database by running obigrep.ref1.sh (keeps only those ID'd to species, genus, family level). Run from the main directory.
-```
-obigrep -d taxo/taxo --require-rank=species \
-  --require-rank=genus --require-rank=family refdb/CRABS_Vertebrates_ncbiMitofishLocal.MiFish.pga60.uni.cln.njs.fasta > refdb/CRABS_Vertebrates_ncbiMitofishLocal.MiFish.pga60.uni.cln2.njs.fasta
-#```
-#4. Dereplicate reference sequences (also adds full taxonomy to header). Run the following from the main directory:
-#```
-obiuniq -d taxo/taxo \
-  refdb/CRABS_Vertebrates_ncbiMitofishLocal.MiFish.pga60.uni.cln2.njs.fasta > refdb/CRABS_Vertebrates_ncbiMitofishLocal.MiFish.pga60.uni2.cln2.njs.fasta
-#```
-#5. One more obigrep to ensure all dereplicated sequences have a taxid at the family level. Run from the main directory.
-#```
-obigrep -d taxo/taxo --require-rank=family \
-  refdb/CRABS_Vertebrates_ncbiMitofishLocal.MiFish.pga60.uni2.cln2.njs.fasta > refdb/CRABS_Vertebrates_ncbiMitofishLocal.MiFish.pga60.uni2.cln3.njs.fasta
-#```
-#6. Annotate reference database with unique IDs by running the following:
-#```
-obiannotate --uniq-id refdb/CRABS_Vertebrates_ncbiMitofishLocal.MiFish.pga60.uni2.cln3.fasta > refdb/CRABS_Vertebrates_ncbiMitofishLocal.MiFish.pga60.uni2.cln3.ann.fasta
-```
-7. Assign taxonomy to the sequences in your samples using the ecotag "lowest common ancestor" algorithm. Make a bash script with the following text called f07_ecotag.sh and use sbatch to run script from the cluster directory.
+3. Assign taxonomy. Make a bash script in the main directory called f07_ecotag.sh and paste the code below into it. It will use obigrep to clean the reference database (keeping only those ID'd to species, genus, family level); obiuni to dereplicate reference sequences; and obiannotate to add unique IDs to the reference database. Somewhere in one of those commands, the full taxonomy is added to the header (including a taxid for each level). Lastly, the code assign taxonomy to the sequences in your samples using the ecotag "lowest common ancestor" algorithm. Navigate to the cluster" directory (the one with your sample sequences) and run it using sbatch from there. 
 ```
 #!/bin/bash
 
@@ -1482,25 +1463,51 @@ obiannotate --uniq-id refdb/CRABS_Vertebrates_ncbiMitofishLocal.MiFish.pga60.uni
 #SBATCH -o %N_%j.ecotag.out
 #SBATCH -e %N_%j.ecotag.err
 
+# add full taxonomy to reference header (?) and require species, genus, and family names
+obigrep -d taxo/taxo --require-rank=species \
+  --require-rank=genus --require-rank=family ../refdb/CRABS_Vertebrates_ncbiMitofishLocal.MiFish.pga60.uni.cln.njs.fasta > ../refdb/CRABS_Vertebrates_ncbiMitofishLocal.MiFish.pga60.uni.cln2.njs.fasta
+
+# Dereplicate sequences (also adds full taxonomy to header, or maybe in previous step). 
+obiuniq -d taxo/taxo \
+  ../refdb/CRABS_Vertebrates_ncbiMitofishLocal.MiFish.pga60.uni.cln2.njs.fasta > ../refdb/CRABS_Vertebrates_ncbiMitofishLocal.MiFish.pga60.uni2.cln2.njs.fasta
+
+# One more obigrep to ensure all dereplicated sequences have a taxid at the family level
+obigrep -d taxo/taxo --require-rank=family \
+  ../refdb/CRABS_Vertebrates_ncbiMitofishLocal.MiFish.pga60.uni2.cln2.njs.fasta > ../refdb/CRABS_Vertebrates_ncbiMitofishLocal.MiFish.pga60.uni2.cln3.njs.fasta
+
+# Annotate reference database with unique IDs
+obiannotate --uniq-id ../refdb/CRABS_Vertebrates_ncbiMitofishLocal.MiFish.pga60.uni2.cln3.fasta > ../refdb/CRABS_Vertebrates_ncbiMitofishLocal.MiFish.pga60.uni2.cln3.ann.fasta
+
+# assign taxonomy to main file using ecotag LCA algorithm
 ecotag -d ../taxo/taxo -R ../refdb/CRABS_Vertebrates_ncbiMitofishLocal.MiFish.pga60.uni2.cln3.njs.ann.fasta \
 merged.uni.c10.140.190.sht.vsc.srt.chi.sin.sw1.fix.fasta > \
 merged.uni.c10.140.190.sht.vsc.srt.chi.sin.sw1.fix.tax.njs.fasta
 
+# (assign taxonomy to a version run without a minimum copy threshold) (optional)
 ecotag -d ../taxo/taxo -R ../refdb/CRABS_Vertebrates_ncbiMitofishLocal.MiFish.pga60.uni2.cln3.njs.ann.fasta \
 merged.uni.c0.140.190.sht.vsc.srt.chi.sin.sw1.fix.no1.fasta > \
 merged.uni.c0.140.190.sht.vsc.srt.chi.sin.sw1.fix.no1.tax.njs.fasta
 
 # Remove unneeded fields from the header by running obiannotate_final.sh
-    # note: I deleted extra stuff in the below script (while troubleshooting); see wolf tutorial for defaults
+    # note: I deleted extra stuff in the below script; see wolf tutorial for defaults
     # note: If running SWARM way, delete count as "size" is the important variable; otherwise DON'T delete count!
     
 obiannotate  --delete-tag=scientific_name_by_db --delete-tag=obiclean_samplecount \
 --delete-tag=obiclean_count --delete-tag=obiclean_singletoncount \
 --delete-tag=obiclean_cluster --delete-tag=obiclean_internalcount \
 --delete-tag=obiclean_head --delete-tag=taxid_by_db --delete-tag=obiclean_headcount \
---delete-tag=id_status --delete-tag=rank_by_db \
+--delete-tag=id_status --delete-tag=rank_by_db --delete-tag=count \
 --delete-tag=order merged.uni.c10.140.190.sht.vsc.srt.chi.sin.sw1.fix.tax.njs.fasta > \
 merged.uni.c10.140.190.sht.vsc.srt.chi.sin.sw1.fix.tax.njs.ann.fasta
+
+# again for the version with no minimum copy threshold
+obiannotate  --delete-tag=scientific_name_by_db --delete-tag=obiclean_samplecount \
+--delete-tag=obiclean_count --delete-tag=obiclean_singletoncount \
+--delete-tag=obiclean_cluster --delete-tag=obiclean_internalcount \
+--delete-tag=obiclean_head --delete-tag=taxid_by_db --delete-tag=obiclean_headcount \
+--delete-tag=id_status --delete-tag=rank_by_db --delete-tag=count \
+--delete-tag=order merged.uni.c0.140.190.sht.vsc.srt.chi.sin.sw1.fix.no1.tax.njs.fasta > \
+merged.uni.c0.140.190.sht.vsc.srt.chi.sin.sw1.fix.no1.tax.njs.ann.fasta
 
 # Sort file by total read count. 
 # Note: if you skipped the steps for clustering with Swarm, then the first argument would be count instead of size
@@ -1508,10 +1515,16 @@ merged.uni.c10.140.190.sht.vsc.srt.chi.sin.sw1.fix.tax.njs.ann.fasta
 obisort -k size -r merged.uni.c10.140.190.sht.vsc.srt.chi.sin.sw1.fix.tax.njs.ann.fasta >  \
 merged.uni.c10.140.190.sht.vsc.srt.chi.sin.sw1.fix.tax.njs.ann.srt.fasta
 
+obisort -k size -r merged.uni.c10.140.190.sht.vsc.srt.chi.sin.sw1.fix.tax.njs.ann.fasta >  \
+merged.uni.c0.140.190.sht.vsc.srt.chi.sin.sw1.fix.no1.tax.njs.ann.srt.fasta
+
 # Export MOTU read count table by running the following code in the command line.
 
 obitab -o merged.uni.c10.140.190.sht.vsc.srt.chi.sin.sw1.fix.tax.njs.ann.srt.fasta > \
 FishIBI.2023.final.MOTU.table.MiFish.tsv
+
+obitab -o merged.uni.c0.140.190.sht.vsc.srt.chi.sin.sw1.fix.no1.tax.njs.ann.srt.fasta > \
+FishIBI.2023.final.MOTU.table.MiFish_c0.tsv
 ```
 
 8. download the tsv file and use process_tabs.Rmd script to do post processing (checking negatives, etc). 
