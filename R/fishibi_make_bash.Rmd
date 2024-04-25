@@ -1,0 +1,85 @@
+# Load libraries and data
+```{r}
+library(dplyr)
+library(ggplot2)
+
+
+samps <- read.csv("data/sampnames.csv") %>%
+  mutate(s = substr(samp,7,11),
+         tags = "aaaaa:ttttt",
+         fwd = "TCTTGTCGGTAAAACTCGTGCCAGC",
+         rev = "CCATAGTGGGGTATCTAATCCCAGTTTG",
+         exp = "exp") %>%
+  select(exp, s, tags, fwd, rev, samp)
+
+```
+
+# create BASH scripts to add fake tags to sequences
+```{r}
+
+s <- samps$s
+
+# make scripts
+for (i in s) {
+
+if(grepl(i, pattern = "X")){prefix = "2533__"}
+if(grepl(i, pattern = "Y")){prefix = "2534__"}
+if(grepl(i, pattern = "Z")){prefix = "2536__"}
+  
+cat(paste0("#!/bin/bash
+
+#SBATCH --partition=main
+#SBATCH --requeue
+#SBATCH --job-name=index",i, "
+#SBATCH --nodes=1
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=24
+#SBATCH --mem=80000
+#SBATCH --time=3-00:00:00
+#SBATCH --output=slurm.justr.%N.%j.out
+#SBATCH --error=slurm.justr.%N.%j.err
+
+sed '/^>/ !{s/^/aaaaa/; s/$/aaaaa/}' ", prefix, i, ".ali.cut2.n21n.fasta > ", i, ".ali.cut2.n21n.tag.fasta
+"),
+file = paste0("data/index",i,".sh")
+)
+}
+```
+
+# make text file inputs to ngsfilter
+```{r}
+
+for (i in 1:nrow(samps)){
+write.table(samps[i,1:5], row.names = F, col.names = F, 
+            file = paste0("data/",samps[i,2],"index.txt"), quote = F)
+}
+```
+
+# make bash scripts to run ngsfilter sample by sample
+```{r}
+s <- samps$s
+
+# make scripts
+for (i in s) {
+cat(paste0("#!/bin/bash
+
+#SBATCH --partition=main
+#SBATCH --requeue
+#SBATCH --job-name=ngsfilter
+#SBATCH --nodes=1
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=24
+#SBATCH --mem=80000
+#SBATCH --time=3-00:00:00
+#SBATCH --output=slurm.justr.%N.%j.out
+#SBATCH --error=slurm.justr.%N.%j.err
+
+ngsfilter -t ",i,"index.txt -u unidentified",i,".fasta ",i,".ali.cut2.n21n.tag.fasta > \\
+  ",i,".ali.cut2.n21n.tag.ngs.fasta
+"),
+file = paste0("data/ngs",i,".sh"))
+}
+```
+
+
+

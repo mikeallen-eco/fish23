@@ -1,0 +1,156 @@
+# load libraries and data
+```{r}
+library(dplyr)
+library(readxl)
+'%notin%' <- Negate('%in%')
+
+# read in MOTU table by sample (Swarm recount) 
+mt <- read.csv("data/merged.uni.c10.140.190.sht.vsc.srt.chi.sin.sw1_output.counts.csv") %>%
+  select(id, starts_with("sample"))
+
+# read in total reads & taxonomy per MOTU (ecotag output)
+f <- read.table("data/FishIBI.2023.final.MOTU.table.MiFish.tsv", 
+                sep="\t", header=TRUE) %>%
+  select(-definition) %>%
+  rename(bestid = starts_with("best_id")) %>%
+  left_join(mt, by = "id") %>%
+  select(seqid = id, bestid, order = order_name, family = family_name, genus = genus_name, species = species_name, count = size, sci = scientific_name, splist = starts_with("species_list"),
+         starts_with("sample"), sequence); rm(mt)
+
+# read in sample names and metabarcoding run information
+s <- read_xlsx("data/2024 Metabarcoding NJDEP Batch 8 022924.xlsx",
+               sheet = "Sheet1") %>%
+  mutate(sample = paste0("sample.",`Seq. Run X, Y, Z`, `Index Set`, 
+                       substr(`Sample Index Code`,1,1), "0",
+                       substr(`Sample Index Code`,2,2)))
+
+# make a lookup table between run/set/well sample number and real sample names
+samp_lookup <- select(s, sample, t = Sample_ID) %>%
+  mutate(real_names = gsub(pattern = " ", replacement = "_", x = t))
+
+# assign real names to sample columns
+cols <- data.frame(sample = colnames(select(f, starts_with("sample.")))) %>%
+  left_join(samp_lookup, by = "sample") %>%
+  mutate(real_names = ifelse(is.na(real_names), sample, real_names))
+
+# change sample codes in raw reads table to real sample names
+colnames(f) # check to make sure the right columns are being changed!
+colnames(f)[10:156] <- cols$real_names
+
+# select out just the samples
+fs <- f %>%
+  select(seqid, order, family, genus, species, bestid, sci, splist,
+         count, starts_with("eDNA"), sequence)  %>%
+  select(-ends_with("-B"), -ends_with("BT M"), -ends_with("RR"))
+colnames(fs)
+
+# sum the reads across all samples
+sum(select(fs, starts_with("eDNA"))) # 5089075 (8005382 last year)
+
+# select out just the negatives
+fn1 <- f %>%
+  select(seqid, order, family, genus, species, bestid, sci, splist,
+         count, starts_with("ENC"), starts_with("Forecp"), starts_with("PCR"), ends_with("-B"),
+         ends_with("BT M"), ends_with("RR"), sequence)
+colnames(fn)
+fn1$total_in_neg <- apply(fn[,10:38],1, sum)
+fn <- fn1 %>%
+  select(seqid, order, family, genus, species, bestid, sci, splist,
+         count, total_in_neg, starts_with("ENC"), starts_with("Forecp"), 
+         starts_with("PCR"), ends_with("-B"),
+         ends_with("BT M"), ends_with("RR"), sequence); rm(fn1)
+
+# sum the reads across all negatives
+sum(select(fn, starts_with("ENC"), starts_with("Forecp"), starts_with("PCR"), ends_with("-B"),
+         ends_with("BT M"), ends_with("RR"))) # 209990 (188343 last year)
+
+write.csv(fs, file = "output/Step1_samps_raw_fishIBI_MOTUtable_2023.csv", row.names = F)
+write.csv(fn, file = "output/Step1_neg_raw_fishIBI_MOTUtable_2023.csv", row.names = F)
+```
+# remove humans, mice, and non-fish
+```{r}
+# filter out non-fish - samples
+table(fs$order)
+fs2 <- fs %>%
+  filter(order %notin% c("Primates", "Rodentia", "Anseriformes", 
+                           "Caudata", "Galliformes", "Testudines",
+                              "Passeriformes", "Pelecaniformes",
+                           "Artiodactyla", "Carnivora", "Eulipotyphla",
+                         "Chiroptera", "Didelphimorphia", "Lagomorpha"),
+         !is.na(order))
+sum(select(fs2, starts_with("eDNA"))) # 5015639 (7520118 last year)
+
+# filter out non-fish - negatives
+table(fn$order)
+fn2 <- fn %>%
+  filter(order %notin% c("Primates", "Rodentia", "Anseriformes", 
+                           "Caudata", "Galliformes", "Testudines",
+                              "Passeriformes", "Pelecaniformes",
+                           "Artiodactyla", "Carnivora", "Eulipotyphla",
+                         "Chiroptera", "Didelphimorphia", "Lagomorpha"),
+         !is.na(order))
+
+# sum the fish reads across all negatives
+sum(select(fn2, starts_with("ENC"), starts_with("Forecp"), starts_with("PCR"), ends_with("-B"),
+         ends_with("BT M"), ends_with("RR"))) # 0 (26037 last year)
+
+# write.csv(fs2, file = "output/fish2023.samples.step1.onlyfish_crabs.csv", row.names = F)
+# write.csv(fn2, file = "output/fish2023.negatives.step1.onlyfish_crabs.csv", row.names = F)
+```
+
+
+.... unfinished below here
+
+# subtract contamination found in negative controls
+```{r}
+# add the max reads by sequence in all the negatives
+fs3a <- fs2 %>%
+  left_join(select(fn2, seqid, seqmax), by = "seqid")
+fs3 <- fs3a
+
+
+# zero out samples with less reads of a sequence than the max contamination among negative of that sequence
+colnames(fs3) # 11:75 are the samples
+
+for(i in 11:75){
+  tmp <- fs3a[,i] - fs3a$seqmax
+  tmp2 <- as.numeric(ifelse(tmp<0,0,tmp))
+  fs3[,i] <- tmp2
+}
+
+# count remaining reads in samples
+sum(select(fs3, starts_with("eDNA")), na.rm = T) # 6581399
+rm(fs3a)
+
+# write.csv(fs3, file = "output/fish2023.samples.step2.onlyfish.negsub_crabs.csv", row.names = F)
+
+# look at sequence lengths
+hist(nchar(fs3$sequence))
+
+# possible BLAST candidates
+to_blast = fs3 %>% 
+  filter(match > 0.8, is.na(species)) %>% 
+  select(1:10, sequence) %>%
+  arrange(desc(match))
+# write.csv(to_blast, file = "output/fish2023.BLAST.candidates.csv", row.names = F)
+
+# table of number of sequences per ID 
+tables <- table(fs3$sci) %>% 
+  data.frame() %>%
+  rename(ecotagID = 1,
+         round2 = 2)
+ # write.csv(tables, "output/fish_seq_ID_table_crabs.csv")
+
+unique(fs3[fs3$match>=0.99, ]$species)
+unique(fs3[fs3$match>=0.90, ]$species)
+
+spcounts <- fs3 %>%
+  filter(!is.na(species)) %>%
+  group_by(species) %>%
+  summarize(maxcount = max(count),
+            numseqs = length(count)) %>%
+  arrange(desc(maxcount))
+write.csv(spcounts, "output/sp_max_total_counts.csv", row.names = F)
+
+```
+
