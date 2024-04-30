@@ -53,12 +53,29 @@ conda install -c bioconda swarm # note: might be better to do this in the python
 ```
 You'll need to run this next line each time you start CRABS or else add it to your bashhc file (google that) to tell bash where to open the crabs program.
 ```
-export PATH="/projects/f_deenr_1/mcallen/reference_database_creator:$PATH"
+export PATH="/file/path/to/reference_database_creator:$PATH"
 ```
 5. Test that it worked
 ```
 crabs -h
 ```
+6. Install NCBI's BLAST+ suite of programs
+These two links are helpful: https://www.ncbi.nlm.nih.gov/books/NBK569856/ https://www.ncbi.nlm.nih.gov/books/NBK52640/
+```
+# make directory outside of the main project folder called blast
+mkdir blast
+cd blast
+
+# download the tar.gz file
+wget https://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/LATEST/ncbi-blast-2.14.0+-x64-linux.tar.gz
+
+# unzip it
+tar -xvf ncbi-blast-2.14.0+-x64-linux.tar.gz
+
+# add this next part to the .bashhc file or run it each time you want to use blastn
+export PATH="/file/path/to/blast/ncbi-blast-2.14.0+/bin:$PATH"
+```
+
 # Process Illumina sequences
 ### Demultiplex and download the sequencing data
 1. Demultiplexing means to split up the reads into individual files by sample. You can do this with bioninformatics software on the cluster, but it is currently pretty easy to do right on the Princeton HTSEQ website. To demultiplex on the website, log in and navigate to your "assay" (sequencing run) page. Click the green "Create Custom Barcode File" button & upload an index file as a tab delimited file with 3 columns: a unique ID, index1 sequences, index2 sequences. The unique ID is a concatenation of the sample pool (e.g., "X"), and the fields Index_Plate and Index_Plate_Well from the file: nextera-dna-udi-lrm-samplesheet-iSeq-MiSeq-nextera-xt-set-a-b-c-d-2x151-384-samples.csv. I'm not sure where that file came from, but I think it is a standard list of Illumina index "barcodes". Paste the 3 columns into a spreadsheet software and save as a tab delimited file. The unique ID could be anything, as long as allows you to match up the sequencing samples with a sample info data file.  
@@ -1336,8 +1353,9 @@ Phoca groenlandica
 Globicephala macrorhynchus
 Canis lupus familiaris
 Felis catus
+Didelphis virginiana
 ```
-9. Subset the reference database using the CRABS function db_subset and the list you just made. Note: same results if you swap the space within the binomials with an underscore.
+9. Make a NJ subset of the reference database using the CRABS function db_subset and the list you just made. Note: same results if you swap the space within the binomials with an underscore.
 ```
 crabs db_subset --input CRABS_Vertebrates_ncbiMitofishLocal.MiFish.pga60.uni.cln.tsv \
 --output CRABS_Vertebrates_ncbiMitofishLocal.MiFish.pga60.uni.cln.njs.tsv \
@@ -1350,13 +1368,13 @@ cat tmp.tsv CRABS_Vertebrates_ncbiMitofishLocal.MiFish.pga60.uni.cln.njs.tsv > C
 
 rm tmp.tsv
 ```
-9. Make the final CRABS reference database into fasta files in 2 versions: a full version and a NJ subset. Must include a taxid for each entry to work with obitools/ecotag taxonomy assignment. First, using nano, make an R script in the main directory called ref04_crabs2fasta.R with the following code in it:
+9. Use the following R script to make the 2 final CRABS reference databases into fasta files: the full version and the NJ subset. The fasta will include a taxid for each entry that will work with obitools/ecotag taxonomy assignment. First, using nano, make an R script in the main directory called ref04_crabs2fasta.R with the following code in it:
 ```
 # input the path to the full CRABS output reference file
 crab_db_filepath_fulldb <- "refdb/CRABS_Vertebrates_ncbiMitofishLocal.MiFish.pga60.uni.cln.tsv"
 
 # input the path to the NJ subset CRABS output reference file
-crab_db_filepath_fulldb <- "refdb/CRABS_Vertebrates_ncbiMitofishLocal.MiFish.pga60.uni.cln.njs.tsv"
+crab_db_filepath_fulldb <- "refdb/CRABS_Vertebrates_ncbiMitofishLocal.MiFish.pga60.uni.cln.njs2.tsv"
 
 # Define names for the full reference output file
 output_ref_db_fulldb <- "refdb/CRABS_Vertebrates_ncbiMitofishLocal.MiFish.pga60.uni.cln.fasta"
@@ -1476,19 +1494,14 @@ obigrep -d taxo/taxo --require-rank=family \
   ../refdb/CRABS_Vertebrates_ncbiMitofishLocal.MiFish.pga60.uni2.cln2.njs.fasta > ../refdb/CRABS_Vertebrates_ncbiMitofishLocal.MiFish.pga60.uni2.cln3.njs.fasta
 
 # Annotate reference database with unique IDs
-obiannotate --uniq-id ../refdb/CRABS_Vertebrates_ncbiMitofishLocal.MiFish.pga60.uni2.cln3.fasta > ../refdb/CRABS_Vertebrates_ncbiMitofishLocal.MiFish.pga60.uni2.cln3.ann.fasta
+obiannotate --uniq-id ../refdb/CRABS_Vertebrates_ncbiMitofishLocal.MiFish.pga60.uni2.cln3.fasta > ../refdb/CRABS_Vertebrates_ncbiMitofishLocal.MiFish.pga60.uni2.cln3.njs.ann.fasta
 
 # assign taxonomy to main file using ecotag LCA algorithm
 ecotag -d ../taxo/taxo -R ../refdb/CRABS_Vertebrates_ncbiMitofishLocal.MiFish.pga60.uni2.cln3.njs.ann.fasta \
 merged.uni.c10.140.190.sht.vsc.srt.chi.sin.sw1.fix.fasta > \
 merged.uni.c10.140.190.sht.vsc.srt.chi.sin.sw1.fix.tax.njs.fasta
 
-# (assign taxonomy to a version run without a minimum copy threshold) (optional)
-ecotag -d ../taxo/taxo -R ../refdb/CRABS_Vertebrates_ncbiMitofishLocal.MiFish.pga60.uni2.cln3.njs.ann.fasta \
-merged.uni.c0.140.190.sht.vsc.srt.chi.sin.sw1.fix.no1.fasta > \
-merged.uni.c0.140.190.sht.vsc.srt.chi.sin.sw1.fix.no1.tax.njs.fasta
-
-# Remove unneeded fields from the header by running obiannotate_final.sh
+# Remove unneeded fields from the header
     # note: I deleted extra stuff in the below script; see wolf tutorial for defaults
     # note: If running SWARM way, delete count as "size" is the important variable; otherwise DON'T delete count!
     
@@ -1500,32 +1513,179 @@ obiannotate  --delete-tag=scientific_name_by_db --delete-tag=obiclean_samplecoun
 --delete-tag=order merged.uni.c10.140.190.sht.vsc.srt.chi.sin.sw1.fix.tax.njs.fasta > \
 merged.uni.c10.140.190.sht.vsc.srt.chi.sin.sw1.fix.tax.njs.ann.fasta
 
-# again for the version with no minimum copy threshold
-obiannotate  --delete-tag=scientific_name_by_db --delete-tag=obiclean_samplecount \
---delete-tag=obiclean_count --delete-tag=obiclean_singletoncount \
---delete-tag=obiclean_cluster --delete-tag=obiclean_internalcount \
---delete-tag=obiclean_head --delete-tag=taxid_by_db --delete-tag=obiclean_headcount \
---delete-tag=id_status --delete-tag=rank_by_db --delete-tag=count \
---delete-tag=order merged.uni.c0.140.190.sht.vsc.srt.chi.sin.sw1.fix.no1.tax.njs.fasta > \
-merged.uni.c0.140.190.sht.vsc.srt.chi.sin.sw1.fix.no1.tax.njs.ann.fasta
-
 # Sort file by total read count. 
 # Note: if you skipped the steps for clustering with Swarm, then the first argument would be count instead of size
 
 obisort -k size -r merged.uni.c10.140.190.sht.vsc.srt.chi.sin.sw1.fix.tax.njs.ann.fasta >  \
 merged.uni.c10.140.190.sht.vsc.srt.chi.sin.sw1.fix.tax.njs.ann.srt.fasta
 
-obisort -k size -r merged.uni.c10.140.190.sht.vsc.srt.chi.sin.sw1.fix.tax.njs.ann.fasta >  \
-merged.uni.c0.140.190.sht.vsc.srt.chi.sin.sw1.fix.no1.tax.njs.ann.srt.fasta
-
 # Export MOTU read count table by running the following code in the command line.
 
 obitab -o merged.uni.c10.140.190.sht.vsc.srt.chi.sin.sw1.fix.tax.njs.ann.srt.fasta > \
 FishIBI.2023.final.MOTU.table.MiFish.tsv
+```
+4. download the tsv file and use process_tabs.Rmd script to do post processing (checking negatives, etc). If you ran the SWARM pathway, then you'll also need to download the *count.csv file and join it to the tsv using the MOTU id (or the sequence). 
 
-obitab -o merged.uni.c0.140.190.sht.vsc.srt.chi.sin.sw1.fix.no1.tax.njs.ann.srt.fasta > \
-FishIBI.2023.final.MOTU.table.MiFish_c0.tsv
+# Use BLAST on unassigned sequences
+
+
+1. Subset unassigned MOTUs for blasting
+```
+# reformat the "best_identity" field in the header to be numeric using 2 sed commands
+  # note: string to replace may be different depending on file names
+sed "s/best_identity={'CRABS_Vertebrates_ncbiMitofishLocal\.MiFish\.pga60\.uni2\.cln3\.njs\.ann': /best_identity=/g" merged.uni.c10.140.190.sht.vsc.srt.chi.sin.sw1.fix.tax.njs.ann.srt.fasta > unassigned.for.blasting_temp.fasta
+
+sed -i 's/}; genus_name=/; genus_name=/g' unassigned.for.blasting_temp.fasta
+
+# now just keep the reads with no species ID or that matched with pctid < 0.95
+obigrep -p 'best_identity<0.95 or species_name==None' unassigned.for.blasting_temp.fasta > unassigned.for.blasting.fasta
+
+rm unassigned.for.blasting_temp.fasta
+```
+2. Make a custom blast database out of the full curated reference library 
+Note: for makeblastdb to work, first run the export command specified in the installation instructions near the top of this document.
+
+see this site for improved methods that adds taxonomic ids to the db:
+https://www.ncbi.nlm.nih.gov/books/NBK569841/
+```
+makeblastdb -in refdb/CRABS_Vertebrates_ncbiMitofishLocal.MiFish.pga60.uni.cln.fasta -dbtype nucl -parse_seqids -out refdb/full_vertebrate_blast_db
+
+# download the taxonomy database files
+wget ftp://ftp.ncbi.nlm.nih.gov/blast/db/taxdb.tar.gz
+
+# unzip it
+tar -xzvf taxdb.tar.gz
+
+```
+x. download the entire eukaryotic component of the blast database or nt_euk. It comes from here https://ftp.ncbi.nlm.nih.gov/blast/db/. I like to put it in a subfolder of the blast directory called "blastdb" created when installing blast. Note: the above only worked for me when I was in my obitools conda environment. Navigate to blastdb directory and run the following code as an sh file using sbatch: sbatch ../../../fish23/f08_dl_blast.sh
+Not sure what I did to install perl etc. but perhaps using conda within my obitools environment.
+```
+#!/bin/bash
+
+#SBATCH --partition=main
+#SBATCH --requeue
+#SBATCH --job-name=blastdl
+#SBATCH --nodes=1
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=24
+#SBATCH --mem=95GB
+#SBATCH --time=1-10:00:00
+#SBATCH -o %N_%j.blast.out
+#SBATCH -e %N_%j.blast.err
+
+# perl ../bin/update_blastdb.pl --passive --decompress nt_euk
+perl ../bin/update_blastdb.pl --passive --decompress nt_euk
+
+```
+3. Blast the unassigned reads 
+```
+blastn -db /projects/f_deenr_1/mcallen/fish23/refdb/full_vertebrate_blast_db \
+-num_threads 24 \
+-outfmt "6 delim=, std qlen slen staxids sscinames scomnames sskingdoms" -max_target_seqs 50 \
+-out "/projects/f_deenr_1/mcallen/fish23/refdb/unassigned.blasted.txt" \
+-query "/projects/f_deenr_1/mcallen/fish23/cluster/unassigned.for.blasting.fasta"
+
+blastn -db /projects/f_deenr_1/mcallen/blast/ncbi-blast-2.14.0+/blastdb/nt_euk \
+-num_threads 24 \
+-outfmt "6 delim=, std qlen slen staxids sscinames scomnames sskingdoms" -max_target_seqs 50 \
+-out "/projects/f_deenr_1/mcallen/fish23/refdb/unassigned.blasted.txt" \
+-query "/projects/f_deenr_1/mcallen/fish23/cluster/unassigned.for.blasting.fasta"
+```
+```
+#!/bin/bash
+
+#SBATCH --partition=main
+#SBATCH --requeue
+#SBATCH --job-name=blast
+#SBATCH --nodes=1
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=24
+#SBATCH --mem=95GB
+#SBATCH --time=1-10:00:00
+#SBATCH -o %N_%j.blast.out
+#SBATCH -e %N_%j.blast.err
+
+blastn -db /projects/f_deenr_1/mcallen/blast/ncbi-blast-2.14.0+/blastdb/nt_euk \
+-num_threads 24 \
+-outfmt "6 delim=, std qlen slen staxids sscinames scomnames sskingdoms" -max_target_seqs 50 \
+-out "/projects/f_deenr_1/mcallen/fish23/refdb/unassigned.blasted.txt" \
+-query "/projects/f_deenr_1/mcallen/fish23/cluster/unassigned.for.blasting.fasta"
 ```
 
-8. download the tsv file and use process_tabs.Rmd script to do post processing (checking negatives, etc). 
-If you ran the SWARM pathway, then you'll also need to download the *count.csv file and join it to the tsv using the MOTU id (or the sequence). Scripts for this are in process_tabs.Rmd as well
+
+
+
+...
+
+
+4. break up the hundreds of sequences to blast into 10 parts so it can run quicker
+obidistribute -n 10 -p 'blast.CAsw1' merged.uni.c10.l75.L125.sht.srt.nochi.1line.swarm1.fix.tag.ann.srt.bla.C.fasta
+obidistribute -n 10 -p 'blast.ZAsw1' merged.uni.c10.l130.L185.sht.srt.nochi.1line.swarm1.fix.tag.ann.srt.bla.Z.fasta
+obidistribute -n 10 -p 'blastA' merged.uni.c10.l140.L190.sht.srt.nochi.1line.swarm1.fix.crabtag.NJexlocal.ann.srt.bla.fasta
+5. make the distributed files back into single line fastas
+    # note: run this for each file in the console
+awk '/^>/{print (NR==1)?$0:"\n"$0;next}{printf "%s", $0}END{print ""}' blast.CA_1.fasta > blast.C_1.fasta
+awk '/^>/{print (NR==1)?$0:"\n"$0;next}{printf "%s", $0}END{print ""}' blastA_1.fasta > blast_1.fasta
+6. run a bash script to BLAST each of them (e.g., blast.C_1.sh, etc.). Code adapted from chatGPT!
+# IMPORTANT NOTE: you need to be set to the directory of the blast db AND the taxonomy db when you run the bash script
+    # otherwise, species will be NA. Found that info here: https://www.biostars.org/p/76551/
+# below is the code that is found in the blast scripts...
+# Define the paths to the BLAST+ programs
+blastn_path="/projects/f_deenr_1/mcallen/blast/ncbi-blast-2.14.0+/bin/blastn"
+# Define the reference database and input sequences
+reference_db="/projects/f_deenr_1/mcallen/blast/ncbi-blast-2.14.0+/blastdb.Z/nt_euk"
+input_sequences_file="/projects/f_deenr_1/mcallen/pinebugs/cluster.Z/blast.Z_1.fasta"
+# Perform the BLAST search for each input sequence
+while read -r sequence; do
+    echo "Processing sequence: $sequence"
+    # Perform the BLAST search
+    $blastn_path -query <(echo -e ">query\n$sequence") -db $reference_db -num_threads 24 -outfmt "6 std qlen slen staxids sscinames" -max_target_seqs 50 -out "results_$sequence.txt"
+done < $input_sequences_file
+6. check the contents of all of the .out files produced (should be same number of sequences as batch fastas etc.)
+ls -1 *.out # get a list of out files (need to be in the blast database directory you ran the script from)
+wc *.out # this is helpful to see how many sequences were processed in each batch (should be ~ the same)
+        # (number will be 2x the number of sequences)
+head hal0077.28480871.out  # look at first 5 sequences processed if needed and compare with relevant fasta file
+7. download the .txt files from the folder to your hard drive (OnDemand works or compress & download with scp)
+https://ondemand.hpc.rutgers.edu/pun/sys/dashboard
+tar -czvf blast.C.tar.gz ./*.txt
+# log out of cluster and download with scp
+scp mcallen@amarel.rutgers.edu:/projects/f_deenr_1/mcallen/blast/ncbi-blast-2.14.0+/blastdb.Z/blast.C.tar.gz ./Downloads/
+tar -xzvf blast.C.tar.gz
+8. stitch the blast text files together in RStudio with code in the process_tabs.Rmd script
+    # note: I use a 95% query coverage threshold for blast hits (other options may be OK too)
+9. join blast info with ecotag match info to create a csv for manual taxonomy curation
+    # columns: id, ecotagmatch, bestblastmatch, ecotagID, blast100, blast99, blast98, etc. ecotag_splist,
+            ecotag_order, ecotag_family, ecotag_genus, overrideID, finalID, notes, gbif, sequence
+    # note: sort by descending ecotagmatch, then by descending blast match
+    
+    
+Local BLAST
+
+## log
+echo "Local BLASTing reads"
+
+## nav to dir, one level up from "$local_blastdb"
+cd "$(dirname "$local_blastdb")"
+
+## echo working dir
+echo "Current working directory: $(pwd)"
+
+## define filenames
+blast_output="${vsearch_dir}/${input_file_no_extension}.l${raw_min_length}.L${raw_max_length}.${primer_name}_linked_unlinked.sub.dd.att.con.sub.csv"
+
+## blast
+singularity exec ~/images/blast.sif \
+blastn -db "$(IFS='/' read -ra parts <<< "$local_blastdb"; echo "${parts[-1]}")" \
+-num_threads "$n_threads" \
+-outfmt "6 delim=, std qlen slen staxids sscinames scomnames sskingdoms" -max_target_seqs 50 \
+-out "../../${blast_output}" \
+-query "../../${vsearch_con_sub}"
+
+## nav back to initial working dir
+cd "$iwd"
+
+
+# --------------------------------------------------------------------------------------------- #
+
+# Process local BLAST output
