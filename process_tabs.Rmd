@@ -11,7 +11,9 @@ mt <- read.csv("data/merged.uni.c10.140.190.sht.vsc.srt.chi.sin.sw1_output.count
 # read in list of NJ vertebrates
 njv <- read.csv("data/nj_vertebrates_taxonomy.csv") %>%
   left_join(select(read.csv("data/nj_vertebrates.csv"), 
-                   mol_name = scientific_name, common_name))
+                   mol_name = scientific_name, common_name)) %>%
+  bind_rows(data.frame(mol_name = "none", ncbi_name = "none", 
+                       common_name = "none", class = "none"))
 
 # read in total reads & taxonomy per MOTU (ecotag output)
 f <- read.table("data/FishIBI.2023.final.MOTU.table.MiFish.tsv", 
@@ -30,13 +32,15 @@ s <- read_xlsx("data/2024 Metabarcoding NJDEP Batch 8 022924.xlsx",
                        substr(`Sample Index Code`,2,2)))
 
 # make a lookup table between run/set/well sample number and real sample names
-samp_lookup <- select(s, sample, t = Sample_ID) %>%
+samp_lookup <- select(s, sample, t = Sample_ID, 
+                      Sample_Type, Date = `Date Collected`,
+                      Stream) %>%
   mutate(real_names = gsub(pattern = " ", replacement = "_", x = t))
 
 # read in BLASTed MOTUs
 # more info on fields: https://www.metagenomics.wiki/tools/blast/blastn-output-format-6
 options(digits = 4)
-b <- read.csv("data/unassigned.blasted.txt", header = F) %>%
+b <- read.csv("data/all.MOTUs.blasted.txt", header = F) %>%
   rename(qseqid = 1, sseqid = 2, pident = 3, length = 4, mismatch = 5, gapopen = 6,
          qstart = 7, qend = 8, sstart = 9, send = 10, evalue = 11, bitscore = 12,
          qlen = 13, slen = 14, staxids = 15, sscinames = 16, scomnames = 17, 
@@ -57,10 +61,11 @@ bsum <- b %>%
   group_by(qseqid) %>%
     mutate(names = paste(unique(sscinames), collapse = "/"),
            comnames = paste(unique(common_name), collapse = "/"),
-           full.blast.bestmatch.each = paste(bestmatch, collapse = "/")) %>%
+           full.blast.bestmatch.each = paste(bestmatch, collapse = "/"),
+           full.blast.bestmatch = max(bestmatch)) %>%
   ungroup() %>%
   select(seqid = qseqid, blast.names = names, 
-         blasst.comnames = comnames, full.blast.bestmatch.each) %>%
+         full.blast.comnames = comnames, full.blast.bestmatch, full.blast.bestmatch.each) %>%
   distinct()
 
 # subset blast results to local species only
@@ -83,11 +88,18 @@ bsum.local <- blocal %>%
          local.blast.comnames = comnames, local.blast.bestmatch.each = bestmatch.each) %>%
   distinct()
 
-
 # assign real names to sample columns
 cols <- data.frame(sample = colnames(select(f, starts_with("sample.")))) %>%
   left_join(samp_lookup, by = "sample") %>%
   mutate(real_names = ifelse(is.na(real_names), sample, real_names))
+
+# samples not in sequencing files
+
+test = data.frame(sample = 
+                     samp_lookup$sample[samp_lookup$sample %notin% colnames(f)]) %>%
+  left_join(samp_lookup)
+write.csv(test, "output/samples_not_in_sequencing_files.csv", row.names = F)
+rm(test)
 
 # change sample codes in raw reads table to real sample names
 colnames(f) # check to make sure the right columns are being changed!
@@ -97,169 +109,178 @@ colnames(f)[10:156] <- cols$real_names
 fn_step1 <- f %>%
   select(seqid, order, family, genus, species, bestid, sci, splist,
          count, starts_with("ENC"), starts_with("Forecp"), starts_with("PCR"), ends_with("-B"),
-         ends_with("BT M"), ends_with("RR"), sequence)
+         ends_with("RR"), sequence)
 colnames(fn_step1)
 fn_step1$total_in_neg <- apply(fn_step1[,10:38],1, sum)
 fn_step1$max_in_neg <- apply(fn_step1[,10:38],1, max)
 fn <- fn_step1 %>%
+  tidyr::replace_na(list(species="none")) %>%
+  left_join(select(njv, species = ncbi_name, ecotag.common = common_name), 
+            by = "species") %>%
   left_join(bsum.local, by = "seqid") %>%
   left_join(bsum, by = "seqid") %>%
-  mutate(final.names = case_when(is.na(species) ~ local.blast.names,
+  mutate(final.common = case_when(species=="none" ~ local.blast.comnames,
+                                 TRUE ~ ecotag.common),
+         final.names = case_when(species=="none" ~ local.blast.names,
                                  TRUE ~ species),
-         final.match = case_when(is.na(species) ~ local.blast.bestmatch.each,
+         final.match = case_when(species=="none" ~ local.blast.bestmatch.each,
                                  TRUE ~ as.character(bestid))) %>%
   select(seqid, order, family, genus, species, final.names, final.match,
          ecotag.match = bestid, 
+         full.blast.bestmatch,
          local.blast.bestmatch.each, 
          full.blast.bestmatch.each,
          ecotag.name = sci, local.blast.names, full.blast.names = blast.names,
          count, total_in_neg, max_in_neg, 
          starts_with("ENC"), starts_with("Forecp"), 
          starts_with("PCR"), ends_with("-B"),
-         ends_with("BT M"), ends_with("RR"), sequence); rm(fn_step1)
+         ends_with("RR"), sequence); rm(fn_step1)
 
 # sum the reads across all negatives
 sum(select(fn, starts_with("ENC"), starts_with("Forecp"), starts_with("PCR"), ends_with("-B"),
-         ends_with("BT M"), ends_with("RR"))) # 209990 (188343 last year)
+         ends_with("RR"))) # 209990 (188343 last year)
 
 # select out just the samples
 fs_step1 <- f %>%
   select(seqid, order, family, genus, species, bestid, sci, splist,
          count, starts_with("eDNA"), sequence)  %>%
-  select(-ends_with("-B"), -ends_with("BT M"), -ends_with("RR"))
+  select(-ends_with("-B"), -ends_with("RR"))
 colnames(fs_step1)
 fs_step1$total_in_samps <- apply(fs_step1[,10:85],1, sum)
 fs_step1$total_in_neg <- fn$total_in_neg
 fs_step1$max_in_neg <- fn$max_in_neg
 fs <- fs_step1 %>%
+  tidyr::replace_na(list(species="none")) %>%
+  left_join(select(njv, species = ncbi_name, ecotag.common = common_name), 
+            by = "species") %>%
   left_join(bsum.local, by = "seqid") %>%
   left_join(bsum, by = "seqid") %>%
-  mutate(final.names = case_when(is.na(species) ~ local.blast.names,
+  mutate(final.common = case_when(species=="none" ~ local.blast.comnames,
+                                 TRUE ~ ecotag.common),
+         final.names = case_when(species=="none" ~ local.blast.names,
                                  TRUE ~ species),
-         final.match = case_when(is.na(species) ~ local.blast.bestmatch.each,
+         final.match = case_when(species=="none" ~ local.blast.bestmatch.each,
                                  TRUE ~ as.character(bestid))) %>%
-  select(seqid, order, family, genus, species, final.names, final.match,
+  select(seqid, order, family, genus, species, final.common, final.names, final.match,
          ecotag.match = bestid, 
+         full.blast.bestmatch,
          local.blast.bestmatch.each, 
          full.blast.bestmatch.each,
          ecotag.name = sci, local.blast.names, full.blast.names = blast.names,
          count, total_in_samps, total_in_neg, max_in_neg, 
          starts_with("eDNA"), sequence); rm(fs_step1)
   
-
 # sum the reads across all samples
 sum(select(fs, starts_with("eDNA"))) # 5089075 (8005382 last year)
 
-# write.csv(fs, file = "output/Step1_samps_raw_fishIBI_MOTUtable_2023.csv", row.names = F)
-# write.csv(fn, file = "output/Step1_neg_raw_fishIBI_MOTUtable_2023.csv", row.names = F)
+f_to_curate <- fs %>%
+  left_join(select(fn, seqid, starts_with("ENC"), starts_with("Forecp"), 
+                   starts_with("PCR"), ends_with("-B"),
+                   ends_with("RR")), by = "seqid") %>%
+  mutate(finalID_source = case_when(species=="none" ~ "BLAST (NCBI eukaryotes)",
+                                    TRUE ~ "Reference database (ecotag)")) %>%
+  select(1:5, finalID_source, 6:126) %>%
+  mutate(class = case_when(order %in% c("Anguilliformes", "Centrarchiformes",
+                                          "Cypriniformes", "Cyprinodontiformes",
+                                        "Esociformes", "Perciformes",
+                                        "Salmoniformes", "Siluriformes") ~ "Actinopteri",
+                           order %in% c("Anseriformes", "Passeriformes") ~ "Aves",
+                           order %in% c("Artiodactyla", "Carnivora", 
+                                        "Chiroptera", "Didelphimorphia",
+                                        "Eulipotyphla", "Lagomorpha",
+                                        "Primates", "Rodentia") ~ "Mammalia",
+                           order %in% c("Caudata") ~ "Amphibia",
+                           order %in% c("Testudines") ~ "Testudines")) %>%
+  arrange(class, final.names, desc(total_in_samps))
+
+# write.csv(f_to_curate, file = "output/Step1_raw_fishIBI2023_MOTUs_to_curate.csv",
+#           row.names = F)
+
 ```
-# Step 2: remove humans/mice, and separate fish from non-fish
+# Step 2: manually curate taxonomy assignments
+Save the file you just exported called Step1_raw_fishIBI2023_MOTUs_to_curate.csv and rename it to Step2_raw_fishIBI2023_MOTUs_curated.csv. If opening in Excel, first open a blank sheet and import the csv file as text that ensures the blast.each columns are imported as characters, otherwise cells with "1/1" will be converted to "1-Jan". Go through each finalID and check to make sure that blast hasn't returned a much better match (e.g., 2 % points, 100% vs. 98%). The important ones are those where ecotag had a poor match (say 85 or 90%) whereas Blast had a "good" match (say 98 or 100%). Those are clear cases of a sequence that was inadvertently omitted from the reference dataset (filtered out during download or in one of the cleaning & taxonomy associating steps). Go through each finalID and update it where needed to the BLAST identity. Be sure to update the finalID_source, final.match, and the full higher taxonomy too. (Note: the higher taxonomy could also be updated programmatically for those, but I've been doing it manually as updated higher taxonomy has been rare.) Save the curated excel file as a csv named: "Step2_raw_fishIBI2023_MOTUs_curated.csv".
+# Create "final_raw_data.csv" from curated data file
+After the finalID and associated column is finalized, format the data into its final form.
 ```{r}
-# create a file of just fish found within samples
-table(fs$order)
-fs2 <- fs %>%
-  # note: update vector below to include all non-fish orders present
-  filter(order %notin% c("Primates", "Rodentia", "Anseriformes", 
-                           "Caudata", "Galliformes", "Testudines",
-                              "Passeriformes", "Pelecaniformes",
-                           "Artiodactyla", "Carnivora", "Eulipotyphla",
-                         "Chiroptera", "Didelphimorphia", "Lagomorpha"),
-         !is.na(order))
-sum(select(fs2, starts_with("eDNA"))) # 5015639 (7520118 last year)
+colnames(f_to_curate) # to modify the column selection part below; 
+f2 <- read.csv("output/Step2_raw_fishIBI2023_MOTUs_curated.csv") %>%
+  select(seqid, finalID = final.names, finalID_names = final.common,
+         bestmatch = final.match, finalID_source, finalID_class = class,
+         finalID_order = order, finalID_family = family, ecotagmatch = ecotag.match, 
+         bestblastmatch = full.blast.bestmatch, ecotagID = ecotag.name,
+         full.blast.names, full.blast.bestmatch.each) %>%
+  left_join(select(f_to_curate, seqid, total_in_samps:`eDNA072-071323-B_RR`), by = "seqid") %>%
+  select(seqid, total_in_samps, total_in_neg, max_in_neg,
+         finalID, finalID_names, bestmatch, finalID_source, finalID_class, 
+         finalID_order, finalID_family, starts_with("eDNA"), 
+         sequence, ecotagmatch, 
+         bestblastmatch, ecotagID,
+         full.blast.names, full.blast.bestmatch.each)  %>%
+  select(-ends_with("-B"), -ends_with("RR")) %>%
+  left_join(select(fn, seqid, starts_with("ENC"), starts_with("Forecp"), 
+                   starts_with("PCR"), ends_with("-B"),
+                   ends_with("RR")), by = "seqid") %>%
+  mutate(finalID = case_when(bestmatch < 0.95 ~ "(no reliable matches)",
+                             is.na(finalID) ~ "(no reliable matches)",
+                             TRUE ~ finalID)) %>%
+  mutate(finalID_names = case_when(finalID == "(no reliable matches)" ~ 
+                                     "(no reliable matches)",
+                             TRUE ~ finalID_names)) %>%
+  mutate(sort = case_when(finalID == "(no reliable matches)" ~ "z",
+                          TRUE ~ finalID_family)) %>%
+  arrange(finalID_class, finalID_order, sort, finalID, desc(total_in_samps)) %>%
+  select(-sort)
 
-# create a file of just good non-fish found within samples (no humans, mice, cows, etc.)
-table(fs$order)
-fso2 <- fs %>%
-  # note: update vector below to include all non-fish orders present
-  filter(order %in% c("Rodentia", "Anseriformes", 
-                           "Caudata", "Galliformes", "Testudines",
-                              "Passeriformes", "Pelecaniformes",
-                           "Artiodactyla", "Carnivora", "Eulipotyphla",
-                         "Chiroptera", "Didelphimorphia", "Lagomorpha")) %>%
-  arrange(order, family, genus, species)
-# %>%
-  # filter(species %notin% c("Sus scrofa", "Ovis aries", "Bos taurus"),
-  #        genus %notin% "Bos")
-sum(select(fso2, starts_with("eDNA"))) # 69776
-
-
-# filter out non-fish - negatives
-table(fn$order)
-fn2 <- fn %>%
-  filter(order %notin% c("Primates", "Rodentia", "Anseriformes", 
-                           "Caudata", "Galliformes", "Testudines",
-                              "Passeriformes", "Pelecaniformes",
-                           "Artiodactyla", "Carnivora", "Eulipotyphla",
-                         "Chiroptera", "Didelphimorphia", "Lagomorpha"),
-         !is.na(order))
-
-# sum the fish reads across all negatives
-sum(select(fn2, starts_with("ENC"), starts_with("Forecp"), starts_with("PCR"), ends_with("-B"),
-         ends_with("BT M"), ends_with("RR"))) # 0 (26037 last year)
-
-# write.csv(fs2, 
-#           file = "output/Step2_samps_justfish_fishIBI_MOTUtable_2023.csv",
-#           row.names = F)
-# write.csv(fso2, 
-#           file = "output/Step2_samps_nohumans_nonfish_fishIBI_MOTUtable_2023.csv",
-#           row.names = F)
-# write.csv(fn2, file = "output/Step2_neg_justfish_fishIBI_MOTUtable_2023.csv",
-#           row.names = F)
+# write.csv(f2, "output/2023_final_raw_data.csv", row.names = F)
 ```
-
-
-.... unfinished below here
-
-# subtract contamination found in negative controls
+# Create "final_sample_table.csv"
 ```{r}
-# add the max reads by sequence in all the negatives
-fs3a <- fs2 %>%
-  left_join(select(fn2, seqid, seqmax), by = "seqid")
-fs3 <- fs3a
+f3 <- f2 %>%
+  select(seqid, finalID, finalID_names, finalID_class, finalID_order, 
+         finalID_family, bestmatch, total_in_samps, total_in_neg, starts_with("eDNA")) %>%
+  select(-ends_with("-B"), -ends_with("RR")) %>%
+  left_join(select(fn, seqid, starts_with("ENC"), starts_with("Forecp"), 
+                   starts_with("PCR"), ends_with("-B"),
+                   ends_with("RR")), by = "seqid") %>%
+  mutate(sort = case_when(finalID == "(no reliable matches)" ~ "z",
+                          TRUE ~ finalID_family)) %>%
+  group_by(sort, finalID, finalID_names, finalID_class, 
+           finalID_order, finalID_family) %>%
+  summarize(bestmatch = max(bestmatch),
+            total_in_samps = sum(total_in_samps),
+            total_in_neg = sum(total_in_neg),
+            across(#total_in_samps, total_in_neg, 
+                   'eDNA097a-060523-03':'eDNA072-071323-B_RR', sum),
+            .groups = "drop") %>%
+  arrange(finalID_class, finalID_order, sort, finalID, desc(total_in_samps)) %>%
+  select(-sort)
 
-
-# zero out samples with less reads of a sequence than the max contamination among negative of that sequence
-colnames(fs3) # 11:75 are the samples
-
-for(i in 11:75){
-  tmp <- fs3a[,i] - fs3a$seqmax
-  tmp2 <- as.numeric(ifelse(tmp<0,0,tmp))
-  fs3[,i] <- tmp2
-}
-
-# count remaining reads in samples
-sum(select(fs3, starts_with("eDNA")), na.rm = T) # 6581399
-rm(fs3a)
-
-# write.csv(fs3, file = "output/fish2023.samples.step2.onlyfish.negsub_crabs.csv", row.names = F)
-
-# look at sequence lengths
-hist(nchar(fs3$sequence))
-
-# possible BLAST candidates
-to_blast = fs3 %>% 
-  filter(match > 0.8, is.na(species)) %>% 
-  select(1:10, sequence) %>%
-  arrange(desc(match))
-# write.csv(to_blast, file = "output/fish2023.BLAST.candidates.csv", row.names = F)
-
-# table of number of sequences per ID 
-tables <- table(fs3$sci) %>% 
-  data.frame() %>%
-  rename(ecotagID = 1,
-         round2 = 2)
- # write.csv(tables, "output/fish_seq_ID_table_crabs.csv")
-
-unique(fs3[fs3$match>=0.99, ]$species)
-unique(fs3[fs3$match>=0.90, ]$species)
-
-spcounts <- fs3 %>%
-  filter(!is.na(species)) %>%
-  group_by(species) %>%
-  summarize(maxcount = max(count),
-            numseqs = length(count)) %>%
-  arrange(desc(maxcount))
-write.csv(spcounts, "output/sp_max_total_counts.csv", row.names = F)
-
+# write.csv(f3, "output/2023_final_sample_table.csv", row.names = F)
+  
 ```
 
+# make species lists by sample
+```{r}
+final <- f3 %>%
+  tidyr::pivot_longer(cols = `eDNA097a-060523-03`:`eDNA072-071323-B_RR`,
+                      names_to = "ActivityID",
+                      values_to = "Reads") %>%
+  left_join(select(samp_lookup, ActivityID = real_names, 
+                   SampleType = Sample_Type, Date, Stream), by = "ActivityID") %>%
+  select(SampleType, Stream, ActivityID, Date, Class = finalID_class,
+         SpeciesLatin = finalID, CommonName = finalID_names, 
+         BestMatch = bestmatch, Reads) %>%
+  filter(Reads>0) %>%
+  mutate(BestMatch = case_when(SpeciesLatin == "(no reliable matches)" ~ NA,
+                               TRUE ~ BestMatch),
+         SpeciesLatin = case_when(SpeciesLatin == "(no reliable matches)" ~ 
+                                    "No reliable matches",
+                               TRUE ~ SpeciesLatin),
+         CommonName = case_when(CommonName == "(no reliable matches)" ~ 
+                                  "No reliable matches",
+                               TRUE ~ CommonName)) %>%
+  arrange(SampleType, ActivityID, Class, desc(Reads))
+
+# write.csv(final, "output/2023_final_summary_table.csv", row.names = F)
+
+```

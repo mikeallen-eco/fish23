@@ -1526,39 +1526,12 @@ FishIBI.2023.final.MOTU.table.MiFish.tsv
 ```
 4. download the tsv file and use process_tabs.Rmd script to do post processing (checking negatives, etc). If you ran the SWARM pathway, then you'll also need to download the *count.csv file and join it to the tsv using the MOTU id (or the sequence). 
 
-# Use BLAST on unassigned sequences
+# Perform BLAST on sequences
 
-
-1. Subset unassigned MOTUs for blasting
-```
-# reformat the "best_identity" field in the header to be numeric using 2 sed commands
-  # note: string to replace may be different depending on file names
-sed "s/best_identity={'CRABS_Vertebrates_ncbiMitofishLocal\.MiFish\.pga60\.uni2\.cln3\.njs\.ann': /best_identity=/g" merged.uni.c10.140.190.sht.vsc.srt.chi.sin.sw1.fix.tax.njs.ann.srt.fasta > unassigned.for.blasting_temp.fasta
-
-sed -i 's/}; genus_name=/; genus_name=/g' unassigned.for.blasting_temp.fasta
-
-# now just keep the reads with no species ID or that matched with pctid < 0.95
-obigrep -p 'best_identity<0.95 or species_name==None' unassigned.for.blasting_temp.fasta > unassigned.for.blasting.fasta
-
-rm unassigned.for.blasting_temp.fasta
-```
-2. Make a custom blast database out of the full curated reference library 
-Note: for makeblastdb to work, first run the export command specified in the installation instructions near the top of this document.
-
-see this site for improved methods that adds taxonomic ids to the db:
-https://www.ncbi.nlm.nih.gov/books/NBK569841/
-```
-makeblastdb -in refdb/CRABS_Vertebrates_ncbiMitofishLocal.MiFish.pga60.uni.cln.fasta -dbtype nucl -parse_seqids -out refdb/full_vertebrate_blast_db
-
-# download the taxonomy database files
-wget ftp://ftp.ncbi.nlm.nih.gov/blast/db/taxdb.tar.gz
-
-# unzip it
-tar -xzvf taxdb.tar.gz
-
-```
-x. download the entire eukaryotic component of the blast database or nt_euk. It comes from here https://ftp.ncbi.nlm.nih.gov/blast/db/. I like to put it in a subfolder of the blast directory called "blastdb" created when installing blast. Note: the above only worked for me when I was in my obitools conda environment. Navigate to blastdb directory and run the following code as an sh file using sbatch: sbatch ../../../fish23/f08_dl_blast.sh
+1. download the entire eukaryotic component of the blast database or nt_euk. It comes from here https://ftp.ncbi.nlm.nih.gov/blast/db/. I like to put it in a subfolder of the blast directory called "blastdb" created when installing blast. Note: the above only worked for me when I was in my obitools conda environment. Navigate to blastdb directory and run the following code as an sh file using sbatch: sbatch ../../../fish23/f08_dl_blast.sh
 Not sure what I did to install perl etc. but perhaps using conda within my obitools environment.
+
+
 ```
 #!/bin/bash
 
@@ -1577,20 +1550,11 @@ Not sure what I did to install perl etc. but perhaps using conda within my obito
 perl ../bin/update_blastdb.pl --passive --decompress nt_euk
 
 ```
-3. Blast the unassigned reads 
+3. Blast the unassigned reads. Make a sh script called f09_blast.sh in the main directory with the following code in it. Navigate to the blastdb folder you made (where you downloaded all the blast databases) and run it from there. You need to be set to the directory of the blast db AND the taxonomy db when you run the bash script, otherwise, species will be NA. Found that info here: https://www.biostars.org/p/76551/. Run the script using something like this:
 ```
-blastn -db /projects/f_deenr_1/mcallen/fish23/refdb/full_vertebrate_blast_db \
--num_threads 24 \
--outfmt "6 delim=, std qlen slen staxids sscinames scomnames sskingdoms" -max_target_seqs 50 \
--out "/projects/f_deenr_1/mcallen/fish23/refdb/unassigned.blasted.txt" \
--query "/projects/f_deenr_1/mcallen/fish23/cluster/unassigned.for.blasting.fasta"
-
-blastn -db /projects/f_deenr_1/mcallen/blast/ncbi-blast-2.14.0+/blastdb/nt_euk \
--num_threads 24 \
--outfmt "6 delim=, std qlen slen staxids sscinames scomnames sskingdoms" -max_target_seqs 50 \
--out "/projects/f_deenr_1/mcallen/fish23/refdb/unassigned.blasted.txt" \
--query "/projects/f_deenr_1/mcallen/fish23/cluster/unassigned.for.blasting.fasta"
+sbatch ../../../fish23/f09_blast.sh
 ```
+Here is the contents of f09_blast.sh:
 ```
 #!/bin/bash
 
@@ -1605,11 +1569,22 @@ blastn -db /projects/f_deenr_1/mcallen/blast/ncbi-blast-2.14.0+/blastdb/nt_euk \
 #SBATCH -o %N_%j.blast.out
 #SBATCH -e %N_%j.blast.err
 
-blastn -db /projects/f_deenr_1/mcallen/blast/ncbi-blast-2.14.0+/blastdb/nt_euk \
+export PATH="/projects/f_deenr_1/mcallen/blast/ncbi-blast-2.14.0+/bin:$PATH"
+
+# blast the eukaryotic database
+blastn -query "/projects/f_deenr_1/mcallen/fish23/cluster/merged.uni.c10.140.190.sht.vsc.srt.chi.sin.sw1.fix.tax.njs.ann.srt.fasta" \
+-db /projects/f_deenr_1/mcallen/blast/ncbi-blast-2.14.0+/blastdb/nt_euk \
 -num_threads 24 \
 -outfmt "6 delim=, std qlen slen staxids sscinames scomnames sskingdoms" -max_target_seqs 50 \
--out "/projects/f_deenr_1/mcallen/fish23/refdb/unassigned.blasted.txt" \
--query "/projects/f_deenr_1/mcallen/fish23/cluster/unassigned.for.blasting.fasta"
+-out "/projects/f_deenr_1/mcallen/fish23/refdb/all.MOTUs.blasted.txt"
+
+# blast the prokaryotic database
+blastn -query "/projects/f_deenr_1/mcallen/fish23/cluster/merged.uni.c10.140.190.sht.vsc.srt.chi.sin.sw1.fix.tax.njs.ann.srt.fasta" \
+-db /projects/f_deenr_1/mcallen/blast/ncbi-blast-2.14.0+/blastdb/nt_prok \
+-num_threads 24 \
+-outfmt "6 delim=, std qlen slen staxids sscinames scomnames sskingdoms" -max_target_seqs 50 \
+-out "/projects/f_deenr_1/mcallen/fish23/refdb/all.MOTUs.blasted.prok.txt"
+
 ```
 
 
@@ -1627,8 +1602,7 @@ obidistribute -n 10 -p 'blastA' merged.uni.c10.l140.L190.sht.srt.nochi.1line.swa
 awk '/^>/{print (NR==1)?$0:"\n"$0;next}{printf "%s", $0}END{print ""}' blast.CA_1.fasta > blast.C_1.fasta
 awk '/^>/{print (NR==1)?$0:"\n"$0;next}{printf "%s", $0}END{print ""}' blastA_1.fasta > blast_1.fasta
 6. run a bash script to BLAST each of them (e.g., blast.C_1.sh, etc.). Code adapted from chatGPT!
-# IMPORTANT NOTE: you need to be set to the directory of the blast db AND the taxonomy db when you run the bash script
-    # otherwise, species will be NA. Found that info here: https://www.biostars.org/p/76551/
+
 # below is the code that is found in the blast scripts...
 # Define the paths to the BLAST+ programs
 blastn_path="/projects/f_deenr_1/mcallen/blast/ncbi-blast-2.14.0+/bin/blastn"
