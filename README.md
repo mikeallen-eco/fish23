@@ -1,9 +1,20 @@
-# fish23 (note: under construction)
-fish metabarcoding bioinformatics workflow
+# A fish eDNA metabarcoding bioinformatics workflow
+An example workflow using the Rutgers Amarel cluster to analyze eDNA samples taken to characterize fish communities from a small region (New Jersey, USA). It targets the 'MiFish' section of the 12S mitochondrial region. The workflow follows the Obitools pipeline (Boyer et al., 2016) with some modifications. See sources below.
+
+<ins>Sources</ins>
+1. Boyer, F., Mercier, C., Bonin, A., Le Bras, Y., Taberlet, P., & Coissac, E. (2016). obitools: A unix‐inspired software package for DNA metabarcoding. Molecular ecology resources, 16(1), 176-182.
+2. the obitools "wolf tutorial": 
+https://pythonhosted.org/OBITools/wolves.html
+3. a helpful pipeline published online by D. Marquina:
+https://metagusano.github.io/publications/Bioinformatic%20Pipeline%20For%20Metabarcoding.pdf
+4. Swarm output processing code by O. Wangensteen:
+https://github.com/metabarpark/R_scripts_metabarpark/blob/master/owi_recount_swarm
 
 # Connect to the cluster
 1. Connect to the Amarel cluster  
-Go to the shell in OnDemand, the terminal if on a Mac, or MobaXterm (or Putty or similar), log into the cluster and type the code below. Be sure to connect to the VPN first if you are off campus (using AnyConnect software) - otherwise, it won't work.
+Visit the user guide to learn how to get an account on Amarel etc. https://sites.google.com/view/cluster-user-guide?pli=1
+
+Open the shell in OnDemand (https://ondemand.hpc.rutgers.edu), the terminal if on a Mac, or MobaXterm (or Putty or similar). Log into the cluster by typing the code below. Be sure to connect to the VPN first if you are off campus (using AnyConnect software) - otherwise, it won't work.
 ```
 ssh YOURNETID@amarel.rutgers.edu
 ```
@@ -1587,7 +1598,6 @@ blastn -query "/file/path/to/maindir/cluster/merged.uni.c10.140.190.sht.vsc.srt.
 # -out "/file/path/to/maindir/refdb/all.MOTUs.blasted.prok.txt"
 
 ```
-
 # Process final output
 Download the following files to your computer from the cluster and add them to the data folder of this repository: 
 1. merged.uni.c10.140.190.sht.vsc.srt.chi.sin.sw1_output.counts.csv
