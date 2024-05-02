@@ -1,5 +1,7 @@
 # A fish eDNA metabarcoding bioinformatics workflow
-An example workflow using the Rutgers Amarel cluster to analyze eDNA samples taken to characterize fish communities from a small region (New Jersey, USA). The molecular analysis amplified the 'MiFish' section of the 12S mitochondrial region using Illumina next-generation sequencing (metabarcoding). The workflow follows the Obitools pipeline (Boyer et al., 2016) with some modifications (see sources below).
+An example workflow using the Rutgers Amarel cluster to analyze eDNA samples taken to characterize fish communities from a small region (New Jersey, USA). The molecular analysis amplified the 'MiFish' section of the 12S mitochondrial region using Illumina next-generation sequencing (metabarcoding). The workflow follows the Obitools pipeline (Boyer et al., 2016) with some modifications. The workflow is largely based on the sources listed below, but if you find it helpful to cite the full compiled workflow, you can also cite this page as:
+
+Allen, M. C. 2024. A fish eDNA metabarcoding bioinformatics workflow. URL: https://github.com/mikeallen-eco/fish23
 
 <ins>Sources</ins>
 1. Boyer, F., Mercier, C., Bonin, A., Le Bras, Y., Taberlet, P., & Coissac, E. (2016). obitools: A unix‐inspired software package for DNA metabarcoding. Molecular ecology resources, 16(1), 176-182.
@@ -1539,6 +1541,7 @@ FishIBI.2023.final.MOTU.table.MiFish.tsv
 4. download the tsv file and use process_tabs.Rmd script to do post processing (checking negatives, etc). If you ran the SWARM pathway, then you'll also need to download the *count.csv file and join it to the tsv using the MOTU id (or the sequence). 
 
 # Perform BLAST on sequences
+Even with a well-made reference database, there is always the possibility that some valid sequences were left out, either excluded during the download and filtering steps, or during the geographic filtering step. Therefore, I find it is a good idea to blast all MOTUs against the full NCBI Eukaryotic database and manually examine the results. This rarely produces any big surprises, but it often reveals a few better matches to the same taxa, or reveals likely contaminant species (or maybe recent introductions!) present at low total read counts. For example, it has revealed ocean fish species in freshwater river samples, all with very few reads (< 30 total).
 
 1. download the entire eukaryotic component of the blast database or nt_euk. It comes from here https://ftp.ncbi.nlm.nih.gov/blast/db/. I like to put it in a subfolder of the blast directory called "blastdb" created when installing blast. Note: the above only worked for me when I was in my obitools conda environment. Navigate to blastdb directory and run the following code as an sh file using sbatch: sbatch ../../../fish23/f08_dl_blast.sh
 Not sure what I did to install perl etc. but perhaps using conda within my obitools environment.
