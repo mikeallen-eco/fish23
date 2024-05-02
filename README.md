@@ -11,6 +11,7 @@ https://pythonhosted.org/OBITools/wolves.html
 https://metagusano.github.io/publications/Bioinformatic%20Pipeline%20For%20Metabarcoding.pdf
 4. Swarm output processing code by O. Wangensteen:
 https://github.com/metabarpark/R_scripts_metabarpark/blob/master/owi_recount_swarm
+5. Gold, Z., Curd, E. E., Goodwin, K. D., Choi, E. S., Frable, B. W., Thompson, A. R., ... & Barber, P. H. (2021). Improving metabarcoding taxonomic assignment: A case study of fishes in a large marine ecosystem. Molecular ecology resources, 21(7), 2546-2564.
 
 # Connect to the cluster
 1. Connect to the Amarel cluster  
@@ -438,6 +439,7 @@ mkdir mam
 mkdir herps
 mkdir reftax
 ```
+### Import and process private reference sequence data
 2. Curate any custom reference databases
 Get CUSTOM reference sequences into crabs from your own fasta file (e.g., the Rees fish mitochondria bioproject)
 Note: the first item in the fasta header has to be just an accession number or a species name (see crabs github). We will process these files all the way through taxonomy assignment first in the command line so we can see clearly what happens to them.
@@ -511,6 +513,7 @@ crabs assign_tax \
 # remove the test files once they have been checked
 rm *.test.*
 ```
+### Get and process reference sequences from public databases
 3. Download mitochondrial sequences from GenBank, MitoFish, etc. for fish, mammals, and 'herps' (birds, amphibians, reptiles) separately. First create an .sh script called ref01_mifish_fish.sh in your main directory and paste the following into it. Note that you'll need to either customize the code related to the custom reference databases below or else comment them out. GenBank search term tips to customize it (e.g., could just download relevant families): https://otagomohio.github.io/hacky2021/sessions/1005_ncbi/. Note: you'll need to change "your@email.edu" to your own email address to download from GenBank. Start with the fish:
 ```
 #!/bin/bash
@@ -591,18 +594,6 @@ crabs db_merge \
 --input CRABS_Fish_mitofish_dl.MiFish.pga60.fasta \
 CRABS_Fish_ncbi_dl.MiFish.pga60.fasta
 
-# download taxonomy files to it (comment out if already done)
-crabs db_download --source taxonomy
-
-# create final amplicon table with taxonomy
-# add records that didn't match a taxon to the "missing" file to be reviewed later 
-crabs assign_tax \
---input CRABS_Fish_ncbimito_dl.MiFish.pga60.fasta  \
---output CRABS_Fish_ncbimito_dl.MiFish.pga60.tax.tsv \
---acc2tax nucl_gb.accession2taxid \
---taxid nodes.dmp \
---name names.dmp \
---missing missing_CRABS_Fish_ncbimito_dl.MiFish.pga60.tax.tsv
 ```
 4. Now make one for mammals (mifish_mam.sh):
 ```
@@ -659,19 +650,6 @@ crabs pga --input CRABS_Mammals_ncbi_dl.fasta \
 --fwd GTCGGTAAAACTCGTGCCAGC --rev CATAGTGGGGTATCTAATCCCAGTTTG \
 --speed slow --percid 0.60 --coverage 0.95 --filter_method strict
 
-# download taxonomy files to it (commented out since already done in fish folder)
-# crabs db_download --source taxonomy
-
-# create final amplicon table with taxonomy
-# add records that didn't match a taxon to the "missing" file to be reviewed later 
-crabs assign_tax \
---input CRABS_Mammals_ncbi_dl.MiFish.pga60.fasta \
---output CRABS_Mammals_ncbi_dl.MiFish.pga60.tax.tsv \
---acc2tax nucl_gb.accession2taxid \
---taxid nodes.dmp \
---name names.dmp \
---missing missing_CRABS_Mammals_ncbi_dl.MiFish.pga60.tax.tsv
-
 ```
 5. Now make one for birds/fish/amphibians (mifish_herps.sh):
 ```
@@ -710,19 +688,6 @@ crabs insilico_pcr \
 crabs pga --input CRABS_Herps_ncbi_dl.fasta --output CRABS_Herps_ncbi_dl.MiFish.pga60.fasta \
 --database CRABS_Herps_ncbi_dl.MiFish.fasta --fwd GTCGGTAAAACTCGTGCCAGC --rev CATAGTGGGGTATCTAATCCCAGTTTG \
 --speed slow --percid 0.60 --coverage 0.95 --filter_method strict
-
-# download taxonomy files to it (commented out since already done in fish folder)
-crabs db_download --source taxonomy
-
-# create final amplicon table with taxonomy
-# add records that didn't match a taxon to the "missing" file to be reviewed later 
-crabs assign_tax \
---input CRABS_Herps_ncbi_dl.MiFish.pga60.fasta  \
---output CRABS_Herps_ncbi_dl.MiFish.pga60.tax.tsv \
---acc2tax nucl_gb.accession2taxid \
---taxid .nodes.dmp \
---name names.dmp \
---missing missing_CRABS_Herps_ncbi_dl.MiFish.pga60.tax.tsv
 
 ```
 6. Use sbatch to run each of the scripts you just made from within their respective folder: fish, mam, or herps.
@@ -784,7 +749,7 @@ crabs seq_cleanup --input refdb/CRABS_Vertebrates_ncbiMitofishLocal.MiFish.pga60
 
 ```
 ###Subset to include only species expected to occur in the area
-This approach was adopted based on Gold et al., . It prevents all of the "genus-level" taxonomic assignments by lowest-common ancestor algorithms (e.g., ecotag) that result  when you include species that are out of range, but that are closely related (i.e., that share very similar 12S sequences). You can always assess whether you think an out-of-range species is plausible given the data by performing a blast search against a larger database later (see that section below). 
+The approach of taxonomic assignment based on a geographically localized reference database was adopted based on the work of Gold et al., (2021). It prevents many "genus-level" taxonomic assignments that can incorrectly result from lowest-common ancestor algorithms (e.g., ecotag) when the reference database includes species that are out of range; specifically, when there are out-of-range species that are closely related evolutionarily and therefore share very similar mitochondrial sequences (e.g., the MiFish 12S sequence). You can always assess later whether you think an out-of-range species is a plausible ID given the data by performing a blast search against a larger database later (see that section below). 
 
 8. Make a version that is a subset of only local NJ species. First, make a text file with a list of all the vertebrate species found in New Jersey. This list was compiled from 4 websites: 
 https://dep.nj.gov/njfw/fishing/freshwater/freshwater-fish-of-new-jersey/
