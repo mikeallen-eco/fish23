@@ -51,7 +51,7 @@ git clone https://github.com/gjeunen/reference_database_creator.git
 conda install -c bioconda ecoprimers
 conda install -c bioconda swarm # note: might be better to do this in the python 3.8 environment
 ```
-You'll need to run this next line each time you start CRABS or else add it to your bashhc file (google that) to tell bash where to open the crabs program.
+You'll need to run this next line each time you start CRABS or else add it to your bashhc file (google that) to tell bash where to open the crabs program. (Note: change the file path to the actual one to the reference_database_creator folder.)
 ```
 export PATH="/file/path/to/reference_database_creator:$PATH"
 ```
@@ -1546,15 +1546,15 @@ Not sure what I did to install perl etc. but perhaps using conda within my obito
 #SBATCH -o %N_%j.blast.out
 #SBATCH -e %N_%j.blast.err
 
-# perl ../bin/update_blastdb.pl --passive --decompress nt_euk
 perl ../bin/update_blastdb.pl --passive --decompress nt_euk
+# perl ../bin/update_blastdb.pl --passive --decompress nt_prok
 
 ```
 3. Blast the unassigned reads. Make a sh script called f09_blast.sh in the main directory with the following code in it. Navigate to the blastdb folder you made (where you downloaded all the blast databases) and run it from there. You need to be set to the directory of the blast db AND the taxonomy db when you run the bash script, otherwise, species will be NA. Found that info here: https://www.biostars.org/p/76551/. Run the script using something like this:
 ```
 sbatch ../../../fish23/f09_blast.sh
 ```
-Here is the contents of f09_blast.sh:
+Here is the contents of f09_blast.sh (you'll need to change file paths):
 ```
 #!/bin/bash
 
@@ -1569,97 +1569,31 @@ Here is the contents of f09_blast.sh:
 #SBATCH -o %N_%j.blast.out
 #SBATCH -e %N_%j.blast.err
 
-export PATH="/projects/f_deenr_1/mcallen/blast/ncbi-blast-2.14.0+/bin:$PATH"
+export PATH="/file/path/to/blast/ncbi-blast-2.14.0+/bin:$PATH"
 
 # blast the eukaryotic database
-blastn -query "/projects/f_deenr_1/mcallen/fish23/cluster/merged.uni.c10.140.190.sht.vsc.srt.chi.sin.sw1.fix.tax.njs.ann.srt.fasta" \
--db /projects/f_deenr_1/mcallen/blast/ncbi-blast-2.14.0+/blastdb/nt_euk \
+blastn -query "/file/path/to/maindir/cluster/merged.uni.c10.140.190.sht.vsc.srt.chi.sin.sw1.fix.tax.njs.ann.srt.fasta" \
+-db /file/path/to/blast/ncbi-blast-2.14.0+/blastdb/nt_euk \
 -num_threads 24 \
 -outfmt "6 delim=, std qlen slen staxids sscinames scomnames sskingdoms" -max_target_seqs 50 \
--out "/projects/f_deenr_1/mcallen/fish23/refdb/all.MOTUs.blasted.txt"
+-out "/file/path/to/maindir/refdb/all.MOTUs.blasted.txt"
 
 # blast the prokaryotic database
-blastn -query "/projects/f_deenr_1/mcallen/fish23/cluster/merged.uni.c10.140.190.sht.vsc.srt.chi.sin.sw1.fix.tax.njs.ann.srt.fasta" \
--db /projects/f_deenr_1/mcallen/blast/ncbi-blast-2.14.0+/blastdb/nt_prok \
--num_threads 24 \
--outfmt "6 delim=, std qlen slen staxids sscinames scomnames sskingdoms" -max_target_seqs 50 \
--out "/projects/f_deenr_1/mcallen/fish23/refdb/all.MOTUs.blasted.prok.txt"
+# blastn -query "/file/path/to/maindir/cluster/merged.uni.c10.140.190.sht.vsc.srt.chi.sin.sw1.fix.tax.njs.ann.srt.fasta" \
+# -db /file/path/to/blast/ncbi-blast-2.14.0+/blastdb/nt_prok \
+# -num_threads 24 \
+# -outfmt "6 delim=, std qlen slen staxids sscinames scomnames sskingdoms" -max_target_seqs 50 \
+# -out "/file/path/to/maindir/refdb/all.MOTUs.blasted.prok.txt"
 
 ```
 
+# Process final output
+Download the following files to your computer from the cluster and add them to the data folder of this repository: 
+1. merged.uni.c10.140.190.sht.vsc.srt.chi.sin.sw1_output.counts.csv
+2. FishIBI.2023.final.MOTU.table.MiFish.tsv
+3. all.MOTUs.blasted.txt
+4. all.MOTUs.blasted.prok.txt (if applicable; I didn't end up using this one)
 
+Open the process_tabs.Rmd in this repository in RStudio and follow instructions in there to process the data the rest of the way.
 
-
-...
-
-
-4. break up the hundreds of sequences to blast into 10 parts so it can run quicker
-obidistribute -n 10 -p 'blast.CAsw1' merged.uni.c10.l75.L125.sht.srt.nochi.1line.swarm1.fix.tag.ann.srt.bla.C.fasta
-obidistribute -n 10 -p 'blast.ZAsw1' merged.uni.c10.l130.L185.sht.srt.nochi.1line.swarm1.fix.tag.ann.srt.bla.Z.fasta
-obidistribute -n 10 -p 'blastA' merged.uni.c10.l140.L190.sht.srt.nochi.1line.swarm1.fix.crabtag.NJexlocal.ann.srt.bla.fasta
-5. make the distributed files back into single line fastas
-    # note: run this for each file in the console
-awk '/^>/{print (NR==1)?$0:"\n"$0;next}{printf "%s", $0}END{print ""}' blast.CA_1.fasta > blast.C_1.fasta
-awk '/^>/{print (NR==1)?$0:"\n"$0;next}{printf "%s", $0}END{print ""}' blastA_1.fasta > blast_1.fasta
-6. run a bash script to BLAST each of them (e.g., blast.C_1.sh, etc.). Code adapted from chatGPT!
-
-# below is the code that is found in the blast scripts...
-# Define the paths to the BLAST+ programs
-blastn_path="/projects/f_deenr_1/mcallen/blast/ncbi-blast-2.14.0+/bin/blastn"
-# Define the reference database and input sequences
-reference_db="/projects/f_deenr_1/mcallen/blast/ncbi-blast-2.14.0+/blastdb.Z/nt_euk"
-input_sequences_file="/projects/f_deenr_1/mcallen/pinebugs/cluster.Z/blast.Z_1.fasta"
-# Perform the BLAST search for each input sequence
-while read -r sequence; do
-    echo "Processing sequence: $sequence"
-    # Perform the BLAST search
-    $blastn_path -query <(echo -e ">query\n$sequence") -db $reference_db -num_threads 24 -outfmt "6 std qlen slen staxids sscinames" -max_target_seqs 50 -out "results_$sequence.txt"
-done < $input_sequences_file
-6. check the contents of all of the .out files produced (should be same number of sequences as batch fastas etc.)
-ls -1 *.out # get a list of out files (need to be in the blast database directory you ran the script from)
-wc *.out # this is helpful to see how many sequences were processed in each batch (should be ~ the same)
-        # (number will be 2x the number of sequences)
-head hal0077.28480871.out  # look at first 5 sequences processed if needed and compare with relevant fasta file
-7. download the .txt files from the folder to your hard drive (OnDemand works or compress & download with scp)
-https://ondemand.hpc.rutgers.edu/pun/sys/dashboard
-tar -czvf blast.C.tar.gz ./*.txt
-# log out of cluster and download with scp
-scp mcallen@amarel.rutgers.edu:/projects/f_deenr_1/mcallen/blast/ncbi-blast-2.14.0+/blastdb.Z/blast.C.tar.gz ./Downloads/
-tar -xzvf blast.C.tar.gz
-8. stitch the blast text files together in RStudio with code in the process_tabs.Rmd script
-    # note: I use a 95% query coverage threshold for blast hits (other options may be OK too)
-9. join blast info with ecotag match info to create a csv for manual taxonomy curation
-    # columns: id, ecotagmatch, bestblastmatch, ecotagID, blast100, blast99, blast98, etc. ecotag_splist,
-            ecotag_order, ecotag_family, ecotag_genus, overrideID, finalID, notes, gbif, sequence
-    # note: sort by descending ecotagmatch, then by descending blast match
     
-    
-Local BLAST
-
-## log
-echo "Local BLASTing reads"
-
-## nav to dir, one level up from "$local_blastdb"
-cd "$(dirname "$local_blastdb")"
-
-## echo working dir
-echo "Current working directory: $(pwd)"
-
-## define filenames
-blast_output="${vsearch_dir}/${input_file_no_extension}.l${raw_min_length}.L${raw_max_length}.${primer_name}_linked_unlinked.sub.dd.att.con.sub.csv"
-
-## blast
-singularity exec ~/images/blast.sif \
-blastn -db "$(IFS='/' read -ra parts <<< "$local_blastdb"; echo "${parts[-1]}")" \
--num_threads "$n_threads" \
--outfmt "6 delim=, std qlen slen staxids sscinames scomnames sskingdoms" -max_target_seqs 50 \
--out "../../${blast_output}" \
--query "../../${vsearch_con_sub}"
-
-## nav back to initial working dir
-cd "$iwd"
-
-
-# --------------------------------------------------------------------------------------------- #
-
-# Process local BLAST output

@@ -25,7 +25,7 @@ f <- read.table("data/FishIBI.2023.final.MOTU.table.MiFish.tsv",
          starts_with("sample"), sequence); rm(mt)
 
 # read in sample names and metabarcoding run information
-s <- read_xlsx("data/2024 Metabarcoding NJDEP Batch 8 022924.xlsx",
+s <- read_xlsx("data/2024 Metabarcoding NJDEP Batch 8 022924 - mca.xlsx",
                sheet = "Sheet1") %>%
   mutate(sample = paste0("sample.",`Seq. Run X, Y, Z`, `Index Set`, 
                        substr(`Sample Index Code`,1,1), "0",
@@ -34,7 +34,7 @@ s <- read_xlsx("data/2024 Metabarcoding NJDEP Batch 8 022924.xlsx",
 # make a lookup table between run/set/well sample number and real sample names
 samp_lookup <- select(s, sample, t = Sample_ID, 
                       Sample_Type, Date = `Date Collected`,
-                      Stream) %>%
+                      Stream, SiteID) %>%
   mutate(real_names = gsub(pattern = " ", replacement = "_", x = t))
 
 # read in BLASTed MOTUs
@@ -255,7 +255,7 @@ f3 <- f2 %>%
   arrange(finalID_class, finalID_order, sort, finalID, desc(total_in_samps)) %>%
   select(-sort)
 
-# write.csv(f3, "output/2023_final_sample_table.csv", row.names = F)
+# write.csv(f3, "output/2023_final_sample_table_wide.csv", row.names = F)
   
 ```
 
@@ -265,9 +265,9 @@ final <- f3 %>%
   tidyr::pivot_longer(cols = `eDNA097a-060523-03`:`eDNA072-071323-B_RR`,
                       names_to = "ActivityID",
                       values_to = "Reads") %>%
-  left_join(select(samp_lookup, ActivityID = real_names, 
+  left_join(select(samp_lookup, SiteID, ActivityID = real_names, 
                    SampleType = Sample_Type, Date, Stream), by = "ActivityID") %>%
-  select(SampleType, Stream, ActivityID, Date, Class = finalID_class,
+  select(SampleType, Stream, SiteID, ActivityID, Date, Class = finalID_class,
          SpeciesLatin = finalID, CommonName = finalID_names, 
          BestMatch = bestmatch, Reads) %>%
   filter(Reads>0) %>%
@@ -279,8 +279,8 @@ final <- f3 %>%
          CommonName = case_when(CommonName == "(no reliable matches)" ~ 
                                   "No reliable matches",
                                TRUE ~ CommonName)) %>%
-  arrange(SampleType, ActivityID, Class, desc(Reads))
+  arrange(SampleType, Stream, ActivityID, Class, desc(Reads))
 
-# write.csv(final, "output/2023_final_summary_table.csv", row.names = F)
+# write.csv(final, "output/2023_final_sample_table_long.csv", row.names = F)
 
 ```
