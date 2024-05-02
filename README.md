@@ -23,7 +23,7 @@ ssh YOURNETID@amarel.rutgers.edu
 srun -p main -N 1 -c 20 -n 1 -t 05:00:00 --mem 100GB --pty /bin/bash  # type that into a terminal/console
 ```
 
-# Set up the required software
+# Install software
 1. Download miniconda if you don't have it installed already (for managing software versions)
 ```
 wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh
