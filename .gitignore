@@ -2,11 +2,9 @@
 .Rhistory
 .RData
 .Ruserdata
-/data
 *.tab
 *.tsv
 *output
-*.csv
 /taxo
 R/old
 /private_data

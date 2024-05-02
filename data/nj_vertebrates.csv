@@ -1,0 +1,580 @@
+taxonomic_group,scientific_name,common_name,status
+turtles,Clemmys muhlenbergii,Bog Turtle,
+turtles,Graptemys geographica,Common Map Turtle,
+turtles,Sternotherus odoratus,Common Musk Turtle,
+turtles,Chelydra serpentina,Common Snapping Turtle,
+turtles,Malaclemys terrapin,Diamondback Terrapin,
+turtles,Terrapene carolina,Eastern Box Turtle,
+turtles,Kinosternon subrubrum,Eastern Mud Turtle,
+turtles,Chrysemys picta,Eastern Painted Turtle,
+turtles,Apalone spinifera,Eastern Spiny Softshell,
+turtles,Pseudemys rubriventris,Redbelly Turtle,
+turtles,Trachemys scripta,Red-eared Slider,
+turtles,Clemmys guttata,Spotted Turtle,
+turtles,Clemmys insculpta,Wood Turtle,
+lizards,Eumeces fasciatus,Five-lined Skink,
+lizards,Scincella lateralis,Ground Skink,
+lizards,Sceloporus undulatus,Northern Fence Lizard,
+snakes,Elaphe obsoleta,Black Rat Snake,
+snakes,Elaphe guttata,Corn Snake,
+snakes,Thamnophis sirtalis,Eastern Garter Snake,
+snakes,Heterodon platyrhinos,Eastern Hognose Snake ,
+snakes,Lampropeltis getula,Eastern Kingsnake,
+snakes,Lampropeltis triangulum,Eastern Milk Snake,
+snakes,Thamnophis sauritus,Eastern Ribbon Snake,
+snakes,Virginia valeriae,Eastern Smooth Earth Snake,
+snakes,Carphophis amoenus,Eastern Worm Snake,
+snakes,Coluber constrictor,Northern Black Racer,
+snakes,Storeria dekayi,DeKay’s Brown Snake,
+snakes,Agkistrodon contortrix,Northern Copperhead,
+snakes,Pituophis melanoleucus,Northern Pine Snake,
+snakes,Storeria occipitomaculata,Northern Redbelly Snake,
+snakes,Diadophis punctatus,Northern Ringneck Snake,
+snakes,Cemophora coccinea,Northern Scarlet Snake,
+snakes,Nerodia sipedon,Northern Water Snake,
+snakes,Regina septemvittata,Queen Snake,
+snakes,Opheodrys aestivus,Rough Green Snake,
+snakes,Opheodrys vernalis,Smooth Green Snake,
+snakes,Diadophis punctatus,Southern Ringneck Snake,
+snakes,Crotalus horridus,Timber Rattlesnake,
+salamanders,Ambystoma laterale,Blue-spotted Salamander,
+salamanders,Pseudotriton montanus,Eastern Mud Salamander,
+salamanders,Ambystoma tigrinum,Eastern Tiger Salamander,
+salamanders,Hemidactylium scutatum,Four-toed Salamander,
+salamanders,Ambystoma jeffersonianum,Jefferson Salamander,
+salamanders,Eurycea longicauda,Longtail Salamander ,
+salamanders,Ambystoma opacum,Marbled Salamander,
+salamanders,Desmognathus ochrophaeus,Mountain Dusky Salamander,
+salamanders,Desmognathus fuscus,Northern Dusky Salamander,
+salamanders,Pseudotriton ruber,Northern Red Salamander,
+salamanders,Plethodon glutinosus,Northern Slimy Salamander,
+salamanders,Gyrinophilus porphyriticus,Northern Spring Salamander,
+salamanders,Eurycea bislineata,Northern Two-lined Salamander,
+salamanders,Plethodon cinereus,Redback Salamander,
+salamanders,Notophthalmus viridescens,Red-spotted Newt,
+salamanders,Ambystoma maculatum,Spotted Salamander,
+frogs,Bufo americanus,American Toad,
+frogs,Rana catesbeiana,Bullfrog,
+frogs,Rana virgatipes,Carpenter Frog,
+frogs,Scaphiopus holbrookii,Eastern Spadefoot Toad,
+frogs,Bufo woodhousii,Fowler’s Toad,
+frogs,Rana clamitans,Green Frog,
+frogs,Pseudacris triseriata,New Jersey Chorus Frog,
+frogs,Acris crepitans,Northern Cricket Frog,
+frogs,Hyla versicolor,Northern Gray Treefrog,
+frogs,Pseudacris crucifer,Northern Spring Peeper,
+frogs,Rana palustris,Pickerel Frog,
+frogs,Hyla andersonii,Pine Barrens Treefrog,
+frogs,Hyla chrysoscelis,Southern Gray Treefrog,
+frogs,Rana utricularia,Southern Leopard Frog,
+frogs,Pseudacris triseriata,Upland Chorus Frog,
+frogs,Rana sylvatica,Wood Frog,
+birds,Gavia stellata,Red-throated Loon,mw
+birds,Gavia immer,Common Loon,mw
+birds,Podilymbus podiceps,Pied-billed Grebe,bmw
+birds,Podiceps auritus,Horned Grebe,mw
+birds,Podiceps grisegena,Red-necked Grebe,mw
+birds,Calonectris diomedea,Cory’s Shearwater,mw
+birds,Puffinus gravis,Greater Shearwater,mw
+birds,Puffinus griseus,Sooty Shearwater,mw
+birds,Oceanites oceanicus,Wilson’s Storm-petrel,mw
+birds,Oceanodroma leucorhoa,Leach’s Storm-petrel,mw
+birds,Morus bassanus,Northern Gannet,mw
+birds,Pelecanus occidentalis,Brown Pelican,*
+birds,Phalacrocorax carbo,Great Cormorant,mw
+birds,Phalacrocorax auritus,Double-crested Cormorant,bmw
+birds,Botaurus lentiginosos,American Bittern,bm
+birds,Ixobrychus exilis,Least Bittern,bm
+birds,Ardea herodias,Great Blue Heron,bmw
+birds,Casmerodius albus,Great Egret,bm
+birds,Egretta thula,Snowy Egret,bm
+birds,Egretta caerulea,Little Blue Heron,bm
+birds,Egretta tricolor,tricolored Heron,bm
+birds,Bubulcus ibis,Cattle Egret,bm
+birds,Butorides striatus,Green Heron,bm
+birds,Nycticorax nycticorax,Black-crowned Night Heron,bm
+birds,Nyctanassa violaceus,Yellow-crowned Night Heron,bm
+birds,Plegadis falcinellus,Glossy Ibis,bm
+birds,Dendrocygna bicolor,Fulvous Whistling Duck,a
+birds,Cygnus columbianus,Tundra Swan,mw
+birds,Cygnus olor,Mute Swan,bmw
+birds,Chen caerulescens,Snow Goose,mw
+birds,Branta bernicla,Brant,mw
+birds,Branta canadensis,Canada Goose,bmw
+birds,Aix sponsa,Wood Duck,bmw
+birds,Anas crecca,Green-winged Teal,bmw
+birds,Anas rubripes,American Black Duck,bmw
+birds,Anas platyrhynchos,Mallard,bmw
+birds,Anas acuta,Northern Pintail,mw
+birds,Anas discors,Blue-winged Teal,bmw
+birds,Anas clypeata,Northern Shoveler,mw
+birds,Anas Strepera,Gadwall,bmw
+birds,Anas penelope,Eurasian Wigeon,mw
+birds,Anas americana,American Wigeon,mw
+birds,Aythya valisineria,Canvasback,mw
+birds,Aythya americana,Redhead,mw
+birds,Aythya collaris,Ring-necked Duck,mw
+birds,Aythya marila,Greater Scaup,mw
+birds,Aythya affinis,Lesser Scaup,mw
+birds,Somateria mollissima,Common Eider,mw
+birds,Somateria spectabilis,King Eider,mw
+birds,Histrionicus histrionicus,Harlequin Duck,mw
+birds,Clangula hyemalis,Oldsquaw,mw
+birds,Melanitta nigra,Black Scoter,mw
+birds,Melanitta perspicillata,Surf Scoter,mw
+birds,Melanitta fusca,White-winged Scoter,mw
+birds,Bucephala clangula,Common Goldeneye,mw
+birds,Bucephala albeola,Bufflehead,mw
+birds,Lophodytes cucullatus,Hooded Merganser,bmw
+birds,Mergus merganser,Common Merganser,bmw
+birds,Mergus serrator,Red-breasted Merganser,bmw
+birds,Oxyura jamaicensis,Ruddy Duck,bmw
+birds,Coragyps atratus,Black Vulture,bmw
+birds,Cathartes aura,Turkey Vulture,bmw
+birds,Pandion haliaetus,Osprey,bm
+birds,Elanoides forficodus,Amer. Swallowtail Kite,m
+birds,Ictinia mississippiensis,Mississippi Kite,m
+birds,Haliaeetus leucocephalus,Bald Eagle,bmw
+birds,Circus cyaneus,Northern Harrier,bmw
+birds,Accipiter striatus,Sharp-shinned Hawk,bmw
+birds,Accipiter cooperii,Cooper’s Hawk,bmw
+birds,Accipiter gentilis,Northern Goshawk,bmw
+birds,Buteo lineatus,Red-shouldered Hawk,bmw
+birds,Buteo platypterus,Broad-winged hawk,bm
+birds,Buteo jamaicensis,Red-tailed Hawk,bmw
+birds,Buteo lagopus,Rough-legged Hawk,mw
+birds,Aquila chrysaetos,Golden Eagle,mw
+birds,Falco sparverius,American Kestrel,bmw
+birds,Falco columbarius,Merlin,m
+birds,Falco peregrinus,Peregrine Falcon,bmw
+birds,Phasianus colchicus,Ring-necked Pheasant,bw
+birds,Bonasa umbellus,Ruffed Grouse,bw
+birds,Meleagris gallopavo,Eastern Wild Turkey,bw
+birds,Alectoris graeca,Chukar,---
+birds,Colinus virginianus,Northern Bobwhite,bw
+birds,Coturnicops noveboracensis,Yellow Rail,m
+birds,Laterallus jamaicensis,Black Rail,bm
+birds,Rallus longirostris,Clapper Rail,bmw
+birds,Rallus elegans,King Rail,bm
+birds,Rallus limocola,Virginia Rail,bmw
+birds,Porzana carolina,Sora,bm
+birds,Gallinula chloropus,Common Moorhen,bm
+birds,Porphyrula martinica,Purple Gallinule,a
+birds,Fulica americana,American Coot,bmw
+birds,Pluvialis squatarola,Black-bellied Plover,m
+birds,Pluvialis dominica,American Golden-plover,m
+birds,Charadrius semipalmatus,Semipalmated Plover,m
+birds,Charadrius melodus,Piping Plover,bm
+birds,Charadrius vociferus,Killdeer,bmw
+birds,Haematopus palliatus,American Oystercatcher,bm
+birds,Himantopus mexicanus,Black-necked Stilt,m
+birds,Recurvirostra americana,American Avocet,m
+birds,tringa melanoleuca,Greater Yellowlegs,m
+birds,tringa flavipes,Lesser Yellowlegs,m
+birds,tringa solitaria,Solitary Sandpiper,m
+birds,Catoptrophorus semipalmatus,Willet,bm
+birds,Actitis macularia,Spotted Sandpiper,bm
+birds,Bartramia longicauda,Upland Sandpiper,bm
+birds,Numenius phaeopus,Whimbrel,m
+birds,Limosa haemastica,Hudsonian Godwit,m
+birds,Limosa fedoa,Marbled Godwit,m
+birds,Arenaria interpres,Ruddy Turnstone,m
+birds,Calidris canutus,Red Knot,m
+birds,Calidris alba,Sanderling,mw
+birds,Calidris pusilla,Semipalmated Sandpiper,m
+birds,Calidris mauri,Western Sandpiper,m
+birds,Calidris minutilla,Least Sandpiper,m
+birds,Calidris fuscicollis,White-rumped Sandpiper,m
+birds,Calidris bairdii,Baird’s Sandpiper,m
+birds,Calidris melanotos,Pectoral Sandpiper,m
+birds,Calidris maritima,Purple Sandpiper,m
+birds,Calidris alpina,Dunlin,m
+birds,Calidris ferruginea,Curlew Sandpiper,m
+birds,Calidris himantopus,Stilt Sandpiper,m
+birds,tryngites subruficollis,Buff-breasted Sandpiper,m
+birds,Philomachus pugnax,Ruff,m
+birds,Limnodromus griseus,Short-billed Dowitcher,m
+birds,Limnodromus scolopaceus,Long-billed Dowitcher,m
+birds,Gallinago gallinago,Common Snipe,bmw
+birds,Philohela minor,American Woodcock,bmw
+birds,Phalaropus tricolor,Wilson’s Phalarope,m
+birds,Phalaropus lobatus,Red-necked Phalarope,m
+birds,Phalaropus fulicarias,Red Phalarope,m
+birds,Stercorarius pomarinus,Pomarine Jaeger,m
+birds,Stercorarius parasiticus,Parasitic Jaeger,m
+birds,Stercorarius longicaudus,Long-tailed Jaeger,m
+birds,Larus atricilla,Laughing Gull,bmw
+birds,Larus minutus,Little Gull,mw
+birds,Larus ridibundus,Common Black-headed Gull,mw
+birds,Larus philadelphia,Bonaparte’s Gull,mw
+birds,Larus delawarensis,Ring-billed Gull,bmw
+birds,Larus argentatus,Herring Gull,bmw
+birds,Larus glaucoides,Iceland Gull,mw
+birds,Larus fuscus,Lesser Black-backed Gull,mw
+birds,Larus hyperboreus,Glaucous Gull,mw
+birds,Larus marinus,Great Black-backed Gull,bmw
+birds,Rissa tridactyla,Black-legged Kittiwake,mw
+birds,Sterna nilotica,Gull-billed Tern,bm
+birds,Sterna caspia,Caspian Tern,m
+birds,Sterna maxima,Royal Tern,m
+birds,Sterna dougallii,Roseate Tern,bm
+birds,Sterna hirundo,Common Tern,bm
+birds,Sterna forsteri,Forster’s Tern,bm
+birds,Sterna antillarum,Least Tern,bm
+birds,Childonias niger,Black Tern,m
+birds,Rynchops niger,Black Skimmer,bm
+birds,Alle alle,Dovekie,w
+birds,Uria lomvia,Thick-billed Murre,w
+birds,Alca torda,Razorbill,w
+birds,Columba livia,Rock Dove,bmw
+birds,Zenaida macroura,Mourning Dove,bmw
+birds,Coccyzus erythropthalmus,Black-billed Cuckoo,bm
+birds,Coccyzus americanus,Yellow-billed Cuckoo,bm
+birds,Tyto alba,Common Barn Owl,bmw
+birds,Otus asio,Eastern Screech Owl,bw
+birds,Bubo virginianus,Great Horned Owl,bw
+birds,Nyctea scandiaca,Snowy Owl,w
+birds,Strix varia,Barred Owl,bw
+birds,Asio otus,Long-eared Owl,bmw
+birds,Asio flammeus,Short-eared Owl,bmw
+birds,Aegolius acadicus,Northern Saw-whet Owl,bmw
+birds,Chordeiles minor,Common Nighthawk,bm
+birds,Caprimulgus carolinensis,Chuck-will’s-widow,b
+birds,Caprimulgus vociferus,Whip-poor-will,bm
+birds,Chaetura pelagica,Chimney Swift,bm
+birds,Archilochus colubris,Ruby-throated Hummingbird,bm
+birds,Ceryle alcyon,Belted Kingfisher,bmw
+birds,Melanerpes erythrocephalus,Red-headed Woodpecker,bmw
+birds,Melanerpes carolinus,Red-bellied Woodpecker,bw
+birds,Sphyrapicus varius,Yellow-bellied Sapsucker,mw
+birds,Picoides pubescens,Downy Woodpecker,bw
+birds,Picoides villosus,Hairy Woodpecker,bw
+birds,Colaptes auratus,Northern Flicker,bmw
+birds,Dryocopus pileatus,Pileated Woodpecker,bw
+birds,Contopus borealis,Olive-sided Flycatcher,m
+birds,Contopus virens,Eastern Wood Pewee,bm
+birds,Empidonax flaviventris,Yellow-bellied Flycatcher,m
+birds,Empidonax virescens,Acadian Flycatcher,bm
+birds,Empidonax alnorum,Alder Flycatcher,bm
+birds,Empidonax traillii,Willow Flycatcher,bm
+birds,Empidonax minimus,Least Flycatcher,bm
+birds,Sayornis phoebe,Eastern Phoebe,bm
+birds,Myiarchus crinitus,Great Crested Flycatcher,bm
+birds,Tyrannus verticalis,Western Kingbird,m
+birds,Tyrannus Tyrannus,Eastern Kingbird,bm
+birds,Eremophila alpestris,Horned Lark,bmw
+birds,Progne subis,Purple martin,bm
+birds,Tachycineta bicolor,tree Swallow,bm
+birds,Stelgidopteryx serripennis,No. Rough-winged Swallow,bm
+birds,Riparia riparia,Bank Swallow,bm
+birds,Hirundo pyrrhonota,Cliff Swallow,bm
+birds,Hirundo rustica,Barn Swallow,bm
+birds,Cyanocitta cristata,Blue Jay,bmw
+birds,Corvus brachyrhynchos,American Crow,bmw
+birds,Corvus ossifragus,Fish Crow,bmw
+birds,Corvus corax,Common Raven,bmw
+birds,Paurs atricapillus,Black-capped Chickadee,bmw
+birds,Parus carolinensis,Carolina Chickadee,bw
+birds,Parus hudsonicus,Boreal Chickadee,a
+birds,Parus bicolor,Tufted Titmouse,bw
+birds,Sitta canadensis,Red-breasted Nuthatch,bmw
+birds,Sitta carolinensis,White-breasted Nuthatch,bw
+birds,Certhia americana,Brown Creeper,bmw
+birds,Thryothorus ludovicianus,Carolina Wren,bw
+birds,Troglogytes aedon,House Wren,bm
+birds,Troglodytes troglodytes,Winter Wren,bmw
+birds,Cistothorus platensis,Sedge Wren,bm
+birds,Cistothorus palustris,Marsh Wren,bmw
+birds,Regulus satrapa,Golden-crowned Kinglet,bmw
+birds,Regulus calendula,Ruby-crowned Kinglet,mw
+birds,Polioptila caerulea,Blue-gray Gnatcatcher,bm
+birds,Sialia sialis,Eastern Bluebird,bmw
+birds,Catharus fuscescens,Veery,bm
+birds,Catharus minimus,Gray-cheeked Thrush,m
+birds,Catharus ustulatus,Swainson’s Thrush,m
+birds,Catharus guttatus,Hermit Thrush,bmw
+birds,Hylocichla mustelina,Wood Thrush,bm
+birds,Turdus migratorius,American Robin,bmw
+birds,Dumetella carolinensis,Gray Catbird,bmw
+birds,Mimus polyglottos,Northern Mockingbird,bmw
+birds,Toxostoma rufum,Brown Thrasher,bmw
+birds,Anthus rubescens,Water Pipit,mw
+birds,Bombycilla cedrorum,Cedar Waxwing,bmw
+birds,Lanius excubitor,Northern Shrike,w; listed as Lanius exubitor on website
+birds,Lanius ludovicianus,Loggerhead Shrike,mw
+birds,Sturnus vulgaris,European Starling,bmw
+birds,Vireo griseus,White-eyed Vireo,bm
+birds,Vireo solitarius,Blue-headed Vireo,bm
+birds,Vireo flavifrons,Yellow-throated Vireo,bm
+birds,Vireo gilvus,Warbling Vireo,bm
+birds,Vireo philadelphicus,Philadelphia Vireo,m
+birds,Vireo olivaceus,Red-eyed Vireo,bm
+birds,Vermivora pinus,Blue-winged Warbler,bm
+birds,Vermivora chrysoptera,Golden-winged Warbler,bm
+birds,Vermivora peregrina,Tennesee Warbler,m
+birds,Vermivora celata,Orange-crowned Warbler,m
+birds,Vermivora reficapilla,Nashville Warbler,bm
+birds,Parula americana,Northern Parula,bm
+birds,Dendroica petechia,Yellow Warbler,bm
+birds,Dendroica pensylvanica,Chestnut-sided Warbler,bm
+birds,Dendroica magnolia,Magnolia Warbler,bm
+birds,Dendroica tigrina,Cape May Warbler,m
+birds,Dendroica caerulescens,Black-throated Blue Warbler,bm
+birds,Dendroica coronata,Yellow-rumped Warbler,bmw
+birds,Dendroica virens,Black-throated Green Warbler,bm
+birds,Dendroica fusca,Blackburnian Warbler,bm
+birds,Dendroica dominica,Yellow-throated Warbler,bm
+birds,Dendroica pinus,Pine Warbler,bm
+birds,Dendroica discolor,Prairie Warbler,bm
+birds,Dendroica palmarum,Palm Warbler,m
+birds,Dendroica castanea,Bay-breasted Warbler,m
+birds,Dendroica striata,Blackpoll Warbler,m
+birds,Dendroica cerulea,Cerulean Warbler,bm
+birds,Mniotilta varia,Black-and-white Warbler,bm; listed as Miniotilta varia on website
+birds,Setophaga ruticilla,American Redstart,bm
+birds,Protonotaria citrea,Prothonotary Warbler,bm
+birds,Helmitheros vermivorus,Worm-eating Warbler,bm
+birds,Seiurus aurocapillus,Ovenbird,bm
+birds,Seiurus noveboracensis,Northern Waterthrush,bm
+birds,Seiurus motacilla,Louisiana Waterthrush,bm
+birds,Oporornis formosus,Kentucky Warbler,bm
+birds,Oporornis agilis,Connecticut Warbler,m
+birds,Oporornis philadelphia,Mourning Warbler,m
+birds,Geothlypis trichas,Common Yellowthroat,bm
+birds,Wilsonia citrina,Hooded Warbler,bm
+birds,Wilsonia pusilla,Wilson’s Warbler,m
+birds,Wilsonia canadensis,Canada Warbler,bm
+birds,Icteria virens,Yellow-breasted Chat,bm
+birds,Piranga rubra,Summer Tanager,bm
+birds,Piranga olivacea,Scarlet Tanager,bm
+birds,Cardinalis cardinalis,Northern Cardinal,bw
+birds,Pheucticus ludovicianus,Rose-breasted Grosbeak,bm
+birds,Guiraca caerulea,Blue Grosbeak,bm
+birds,Passerina cyanea,Indigo Bunting,bm
+birds,Spiza americana,Dickcissel,bm
+birds,Pipilo erythrophthalmus,Eastern Towhee,bmw
+birds,Spizella arborea,American tree Sparrow,mw
+birds,Spizella passerina,Chipping Sparrow,bmw
+birds,Spizella pusilla,Field Sparrow,bmw
+birds,Pooecetes gramineus,Vesper Sparrow,bmw
+birds,Chondestes grammacus,Lark Sparrow,a
+birds,Passerculus sandwichensis,Savannah Sparrow,bmw
+birds,Ammodramus savannarum,Grasshopper Sparrow,bm
+birds,Ammodramus henslowii,Henslow’s Sparrow,bm
+birds,Ammodramus caudacutus,Saltmarsh Sharp-tailed Sparrow,bmw
+birds,Ammodramus nelsoni,Nelson's Sharp-tailed Sparrow,m
+birds,Ammodramus maritima,Seaside Sparrow,bmw
+birds,Passerella iliaca,Fox Sparrow,mw
+birds,Melospiza melodia,Song Sparrow,bmw
+birds,Melospiza lincolnii,Lincoln’s Sparrow,m
+birds,Melospiza georgiana,Swamp Sparrow,bmw
+birds,Zonotrichia albicollis,White-throated Sparrow,bmw
+birds,Zonotrichia leucophrys,White-crowned Sparrow,mw
+birds,Junco hyemalis,Dark-eyed Junco,bmw
+birds,Calcarius lapponicus,Lapland Longspur,mw
+birds,Plectophenax nivalis,Snow Bunting,mw
+birds,Dolichonyx oryzivorus,Bobolink,bm
+birds,Agelaius phoeniceus,Red-winged Blackbird,bmw
+birds,Sturnella magna,Eastern Meadowlark,bmw
+birds,Euphagus carolinus,Rusty Blackbird,mw
+birds,Quiscalus major,Boat-tailed Grackle,bmw
+birds,Quiscalus quiscula,Common Grackle,bmw
+birds,Molothrus ater,Brown-headed Cowbird,bmw
+birds,Icterus spurius,Orchard Oriole,bm
+birds,Icterus galbula,Baltimore Oriole,bm
+birds,Pinicola enucleator,Pine Grosbeak,w
+birds,Carpodacus purpureus,Purple Finch,bmw
+birds,Carpodacus mexicanus,House Finch,bmw
+birds,Loxia curvirostra,Red Crossbill,a
+birds,Loxia leucoptera,White-winged Crossbill,a
+birds,Carduelis flammea,Common Redpoll,a
+birds,Carduelis pinus,Pine Siskin,mw
+birds,Carduelis tristis,American Goldfinch,bmw
+birds,Hesperiphona vespertinus,Evening Grosbeak,w
+birds,Passer domesticus,House Sparrow,bmw
+fish,Alosa pseudoharengus,Alewife,
+fish,Lethenteron appendix,American Brook Lamprey,
+fish,Anguilla rostrata,American Eel,
+fish,Alosa sapidissima,American Shad,
+fish,Monopterus albus,Asian Swamp Eel,
+fish,Salmo salar,Atlantic (Landlocked) Salmon,
+fish,Acipenser oxyrinchus,Atlantic Sturgeon,
+fish,Fundulus diaphanus,Banded Killifish,
+fish,Enneacanthus obesus,Banded Sunfish,
+fish,Hypophthalmichthys nobilis,Bighead Carp,
+fish,Ameiurus melas,Black Bullhead,
+fish,Pomoxis nigromaculatus,Black Crappie,
+fish,Enneacanthus chaetodon,Blackbanded Sunfish,
+fish,Rhinichthys atratulus,Blacknose Dace,
+fish,Alosa aestivalis,Blueback Herring,
+fish,Lepomis macrochirus,Bluegill,
+fish,Enneacanthus gloriosus,Bluespotted Sunfish,
+fish,Amia calva,Bowfin,
+fish,Notropis bifrenatus,Bridle Shiner,
+fish,Culaea inconstans,Brook Stickleback,
+fish,Salvelinus fontinalis,Brook Trout,
+fish,Ameiurus nebulosus,Brown Bullhead,
+fish,Salmo trutta,Brown Trout,
+fish,Esox niger,Chain Pickerel,
+fish,Ictalurus punctatus,Channel Catfish,
+fish,Notropis amoenus,Comely Shiner,
+fish,Cyprinus carpio,Common Carp,
+fish,Luxilus cornutus,Common Shiner,
+fish,Semotilus atromaculatus,Creek Chub,
+fish,Erimyzon oblongus,Creek Chubsucker,
+fish,Exoglossum maxillingua,Cutlip Minnow,
+fish,Gambusia holbrooki,Eastern Mosquitofish,
+fish,Umbra pygmaea,Eastern Mudminnow,
+fish,Hybognathus regius,Eastern Silvery Minnow,
+fish,Semotilus corporalis,Fallfish,
+fish,Pimephales promelas,Fathead Minnow,
+fish,Pylodictis olivaris,Flathead Catfish,
+fish,Dorosoma cepedianum,Gizzard Shad,
+fish,Notemigonus crysoleucas,Golden Shiner,
+fish,Carassius auratus,Goldfish,
+fish,Ctenopharyngodon idella,Grass Carp,
+fish,Lepomis cyanellus,Green Sunfish,
+fish,Alosa mediocris,Hickory Shad,
+fish,Trinectes maculatus,Hogchoker,
+fish,Morone saxatilis x M. chrysops,Hybrid Striped Bass,hybrid
+fish,Notropis chalybaeus,Ironcolor Shiner,
+fish,Salvelinus namaycush,Lake Trout,
+fish,Micropterus salmoides,Largemouth Bass,
+fish,Rhinichthys cataractae,Longnose Dace,
+fish,Lepisosteus osseus,Longnose Gar,
+fish,Noturus insignis,Margined Madtom,
+fish,Acantharchus pomotis,Mud Sunfish,
+fish,Fundulus heteroclitus,Mummichog,
+fish,Esox masquinongy,Muskellunge,
+fish,Hypentelium nigricans,Northern Hog Sucker,
+fish,Esox lucius,Northern Pike,
+fish,Channa Argus,Northern Snakehead,
+fish,Misgurnus anguillicaudatus,Oriental Weatherfish,
+fish,Aphredoderus sayanus,Pirate Perch,
+fish,Lepomis gibbosus,Pumpkinseed,
+fish,Carpiodes cyprinus,Quillback,
+fish,Osmerus mordax,Rainbow Smelt,
+fish,Oncorhynchus mykiss,Rainbow Trout,
+fish,Lepomis auritus,Redbreast Sunfish,
+fish,Esox americanus,Redfin Pickerel,
+fish,Ambloplites rupestris,Rock Bass,
+fish,Cyprinella analostana,Satinfin Shiner,
+fish,Petromyzon marinus,Sea Lamprey,
+fish,Percina peltata,Shield Darter,
+fish,Acipenser brevirostrum,Shortnose Sturgeon,
+fish,Cottus cognatus,Slimy Sculpin,
+fish,Micropterus dolomieu,Smallmouth Bass,
+fish,Cyprinella spiloptera,Spotfin Shiner,
+fish,Notropis hudsonius,Spottail Shiner,
+fish,Morone saxatilis,Striped Bass,
+fish,Notropis procne,Swallowtail Shiner,
+fish,Etheostoma fusiforme,Swamp Darter,
+fish,Noturus gyrinus,Tadpole Madtom,
+fish,Etheostoma olmstedi,Tessellated Darter,
+fish,Esox masquinongy x E. lucius,Tiger Musky,hybrid
+fish,Salmo trutta x Salvelinus fontinalis,Tiger Trout,hybrid
+fish,Sander vitreus,Walleye,
+fish,Lepomis gulosus,Warmouth,
+fish,Gambusia affinis,Western Mosquitofish,
+fish,Ameiurus catus,White Catfish,
+fish,Pomoxis annularis,White Crappie,
+fish,Morone americana,White Perch,
+fish,Catostomus commersonii,White Sucker,
+fish,Ameiurus natalis,Yellow Bullhead,
+fish,Perca flavescens,Yellow Perch,
+mammals,Didelphis marsupialis,Opossum,
+mammals,Sorex cinereus,Masked Shrew,
+mammals,Sorex cinereus nigriculus,Tuckahoe Masked Shrew,
+mammals,Sorex palustris,Water Shrew,
+mammals,Sorex fumeus,Smokey Shrew,
+mammals,Sorex dispar,Long-tailed Shrew,
+mammals,Blarina brevicauda,Short-tailed Shrew,
+mammals,Crytotis parva,Least Shrew,
+mammals,Sorex hoyii,Pygmy Shrew,
+mammals,Parascalops breweri,Hairy-tailed Mole,
+mammals,Scalopus aquaticus,Eastern Mole,
+mammals,Condylura cristata,Star-nosed Mole,
+mammals,Myotis lucifugus,Little Brown Bat,
+mammals,Myotis sodalis,Indiana Bat,
+mammals,Myotis septentrionalis,Keen Myotis,
+mammals,Myotis leibii,Small-footed Myotis,
+mammals,Lasionycteris noctivagans,Silver-haired Bat,
+mammals,Pipistrellus subflavus,Eastern Pipistrel,
+mammals,Eptesicus fuscus,Big Brown Bat,
+mammals,Lasiurus borealis,Red Bat,
+mammals,Lasiurus intermedius,Northern yellow bat,
+mammals,Lasiurus cinereus,Hoary Bat,
+mammals,Sylvilagus floridanus,Eastern Cottontail,
+mammals,Sylvilagus transitionalis,New England Cottontail,
+mammals,Lepus capensis,European Hare,
+mammals,Lepus californicus,Black-tailed Jackrabbit,
+mammals,Lepus townsendii,White-tailed Jackrabbit,
+mammals,Tamias striatus,Eastern Chipmunk,
+mammals,Marmota monax,Woodchuck,
+mammals,Sciurus carolinensis,Gray Squirrel,
+mammals,Tamiasciurus hudsonicus,Red Squirrel,
+mammals,Glaucomys volans,Southern Flying Squirrel,
+mammals,Glaucomys sabrinus,Northern Flying Squirrel,
+mammals,Castor candensis,Beaver,
+mammals,Myocastor coypus,Nutria,
+mammals,Oryzomys palustris,Marsh Rice Rat,
+mammals,Peromyscus leucopus,White-footed Mouse,
+mammals,Neotoma floridana,Eastern Wood Rat,
+mammals,Clethrionomys gapperi,Red-backed Mouse,
+mammals,Microtus pennsylvanicus,Meadow Vole,
+mammals,Microtus pinetorum,Pine Vole,
+mammals,Ondatra zibethicus,Muskrat,
+mammals,Synaptomys cooperi,Southern Bog Lemming,
+mammals,Rattus rattus,Black Rat,
+mammals,Rattus norvegicus,Brown Rat,
+mammals,Mus musculus,House mouse,
+mammals,Napaeozapus insignis,Woodland Jumping Mouse,
+mammals,Zapus hudsonius,Meadow Jumping Mouse,
+mammals,Erethizon dorsatum,Porcupine,
+mammals,"Canis latrans, var.",Eastern Coyote,
+mammals,Vulpes vulpes,Red Fox,
+mammals,Urocyon cinereoargenteus,Gray Fox,
+mammals,Ursus americanus,Black Bear,
+mammals,Procyon lotor,Raccoon,
+mammals,Mustela erminea,Ermine,
+mammals,Mustela frenata,Long-tailed Weasel,
+mammals,Mustela vison,Mink,
+mammals,Mephitis mephitis,Striped Skunk,
+mammals,Lutra canadensis,River Otter,
+mammals,Felis rufus,Bobcat,
+mammals,Odocoileus virginianus,White-tailed Deer,
+mammals,Phoca vitulina,Harbor Seal,
+mammals,Pagophilus groenlandica,Harp Seal,
+mammals,Halichoerus grypus,Gray Seal,
+mammals,Cystophora cristata,Hooded Seal,
+mammals,Ziphius cavirostris,Goose-beaked Whale,
+mammals,Mesoplodon densirostris,Dense Beaked Whale,
+mammals,Mesoplodon europaeus,Gervais Beaked Whale,
+mammals,Mesoplodon mirus,True’s Beaked Whale,
+mammals,Physeter macrocephalus,Sperm Whale,
+mammals,Kogia breviceps,Pygmy Sperm Whale,
+mammals,Kogia simus,Dwarf Sperm Whale,
+mammals,Delphinapterus leucas,Beluga Whale,
+mammals,Stenella frontalis,Bridled Spotted Dolphin,
+mammals,Stenella plagiodon,Spotted Dolphin,
+mammals,Stenella coeruleoalba,Striped Dolphin,
+mammals,Delphinus delphis,Saddle-backed Dolphin,
+mammals,Tursiops truncatus,Bottle-nosed Dolphin,
+mammals,Orcinus orca,Atlantic Killer Whale,
+mammals,Grampus griseus,Risso’s Dolphin,
+mammals,Globicephala melaena,Long-finned Pilot Whale,
+mammals,Globicephala macrorhyncus,Short-finned Pilot Whale,
+mammals,Phocoena phocoena,Harbor Porpoise,
+mammals,Balaenoptera physalus,Fin Whale,
+mammals,Balaenoptera borealis,Sei Whale,
+mammals,Balaenoptera acutorostrata,Minke Whale,
+mammals,Balaenoptera musculus,Blue Whale,
+mammals,Megaptera novaeangliae,Humpback Whale,
+mammals,Balaena glacialis,Black Right Whale,
+domestic,Homo sapiens,Human,
+domestic,Bos taurus,Cattle,
+domestic,Ovis aries,Sheep,
+domestic,Gallus gallus,Chicken,
+domestic,Capra hircus,Goat,
+domestic,Equus caballus,Horse,
+domestic,Sus scrofa,Pig,
