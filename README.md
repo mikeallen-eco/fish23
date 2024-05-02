@@ -416,7 +416,7 @@ sed 's/;size=/ size=/g' merged.uni.c10.140.190.sht.vsc.srt.chi.sin.sw1.fasta > m
 # obigrep -p 'size > 1' merged.uni.c0.140.190.sht.vsc.srt.chi.sin.sw1.fix.fasta > merged.uni.c0.140.190.sht.vsc.srt.chi.sin.sw1.fix.no1.fasta
 ```
 
-# Create a custom reference database using CRABS
+# Create a reference database
 
 1. Make directories within the main one for all the raw reference database downloads.
 ```
@@ -476,6 +476,7 @@ crabs pga --input custom2.fasta \
 --fwd TCGTGCCAGC --rev CATAGTGGGGTATCTAATCCCAGTTTG \
 --speed slow --percid 0.60 --coverage 0.95 --filter_method strict
 
+# fix 2 typos in fish names in custom database
 sed -i 's/Misgurnus_angullicaudatus/Misgurnus_anguillicaudatus/g' custom2.MiFish.pga60.fasta
 sed -i 's/Anguillla_rostrata/Anguilla_rostrata/g' custom2.MiFish.pga60.fasta
 
@@ -1351,7 +1352,7 @@ Castor canadensis
 Canis latrans
 Phoca groenlandica
 Globicephala macrorhynchus
-Canis lupus familiaris
+Canis lupus
 Felis catus
 Didelphis virginiana
 ```
