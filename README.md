@@ -1,5 +1,5 @@
 # A metabarcoding bioinformatics tutorial using obitools and Swarm
-An example workflow using the Rutgers Amarel cluster to analyze eDNA samples taken to characterize fish communities from a small region (New Jersey, USA). The molecular analysis amplified the 'MiFish' section of the 12S mitochondrial region using Illumina next-generation sequencing (metabarcoding). The workflow follows the Obitools pipeline (Boyer et al., 2016) with some modifications. The workflow is largely based on the sources listed below, but if you find it helpful to cite the full compiled workflow, you can also cite this page as:
+An example workflow using the Rutgers Amarel cluster to analyze eDNA samples taken to characterize fish communities within New Jersey, USA. The molecular analysis amplified the 'MiFish' section of the 12S mitochondrial region using Illumina next-generation sequencing (metabarcoding). The workflow follows the obitools pipeline (Boyer et al., 2016) with some modifications. The workflow is largely based on the sources listed below and also code generously shared by others (esp. B. Kwait, O. Stringham, O. Wangensteen, D. Marquina). But if you find it helpful to cite the full compiled workflow, you can also cite this page as:
 
 Allen, M. C. 2024. A metabarcoding bioinformatics tutorial using obitools and Swarm. URL: https://github.com/mikeallen-eco/fish23
 
@@ -783,13 +783,16 @@ crabs seq_cleanup --input refdb/CRABS_Vertebrates_ncbiMitofishLocal.MiFish.pga60
 --minlen 100 --maxlen 300 --maxns 10 --enviro yes --species yes
 
 ```
+###Subset to include only species expected to occur in the area
+This approach was adopted based on Gold et al., . It prevents all of the "genus-level" taxonomic assignments by lowest-common ancestor algorithms (e.g., ecotag) that result  when you include species that are out of range, but that are closely related (i.e., that share very similar 12S sequences). You can always assess whether you think an out-of-range species is plausible given the data by performing a blast search against a larger database later (see that section below). 
+
 8. Make a version that is a subset of only local NJ species. First, make a text file with a list of all the vertebrate species found in New Jersey. This list was compiled from 4 websites: 
 https://dep.nj.gov/njfw/fishing/freshwater/freshwater-fish-of-new-jersey/
 https://dep.nj.gov/njfw/education/online-field-guide-for-reptiles-and-amphibians/
 https://www.nj.gov/dep/fgw/chkbirds.htm
 https://www.nj.gov/dep/fgw/chkmamls.htm
 
-The lists were pasted into a csv file and processed using the make_nj_vert_list.R script, including aligning with NCBI taxonomy using the align_taxonomy function found in the align_taxonomy.R file. Both scripts are found in the "R" directory of this repository. Paste the list below into a new text file called nj_vertebrates_ncbi.txt.
+The lists were pasted into a csv file and processed using the make_nj_vert_list.R script to convert into NCBI taxonomy. This uses an 'align_taxonomy' function co-written with O. Stringham. Both scripts are found in the "R" directory of this repository. Paste the final list of local target species in NCBI format into a new text file created on the cluster using nano. Here we'll make one called nj_vertebrates_ncbi.txt with all the vertebrates found in New Jersey (except saltwater fish species):
 ```
 Glyptemys muhlenbergii
 Graptemys geographica

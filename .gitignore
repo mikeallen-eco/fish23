@@ -8,3 +8,5 @@
 *output
 *.csv
 /taxo
+R/old
+/private_data
