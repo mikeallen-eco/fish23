@@ -1,5 +1,5 @@
 # A fish eDNA metabarcoding bioinformatics workflow
-An example workflow using the Rutgers Amarel cluster to analyze eDNA samples taken to characterize fish communities from a small region (New Jersey, USA). It targets the 'MiFish' section of the 12S mitochondrial region. The workflow follows the Obitools pipeline (Boyer et al., 2016) with some modifications. See sources below.
+An example workflow using the Rutgers Amarel cluster to analyze eDNA samples taken to characterize fish communities from a small region (New Jersey, USA). The molecular analysis amplified the 'MiFish' section of the 12S mitochondrial region using Illumina next-generation sequencing (metabarcoding). The workflow follows the Obitools pipeline (Boyer et al., 2016) with some modifications (see sources below).
 
 <ins>Sources</ins>
 1. Boyer, F., Mercier, C., Bonin, A., Le Bras, Y., Taberlet, P., & Coissac, E. (2016). obitools: A unix‐inspired software package for DNA metabarcoding. Molecular ecology resources, 16(1), 176-182.
