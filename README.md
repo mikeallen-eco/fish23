@@ -12,6 +12,7 @@ https://metagusano.github.io/publications/Bioinformatic%20Pipeline%20For%20Metab
 4. Swarm output processing code by O. Wangensteen:
 https://github.com/metabarpark/R_scripts_metabarpark/blob/master/owi_recount_swarm
 5. Gold, Z., Curd, E. E., Goodwin, K. D., Choi, E. S., Frable, B. W., Thompson, A. R., ... & Barber, P. H. (2021). Improving metabarcoding taxonomic assignment: A case study of fishes in a large marine ecosystem. Molecular ecology resources, 21(7), 2546-2564.
+6. Jeunen, G. J., Dowle, E., Edgecombe, J., von Ammon, U., Gemmell, N. J., & Cross, H. (2023). CRABS—a software program to generate curated reference databases for metabarcoding sequencing data. Molecular Ecology Resources, 23(3), 725-738.
 
 # Connect to the cluster
 1. Connect to the Amarel cluster  
@@ -431,73 +432,74 @@ sed 's/;size=/ size=/g' merged.uni.c10.140.190.sht.vsc.srt.chi.sin.sw1.fasta > m
 ```
 
 # Create a reference database
+Here we'll create a 'curated' reference database of annotated MiFish amplicons (i.e., with species names attached) to compare against our sample sequences. This is done here using CRABS software (Jeunen et al., 2022). Most of the code below is modified from the associated GitHub page: https://github.com/gjeunen/reference_database_creator
+
+### Import and process private reference sequence data
+Get CUSTOM reference sequences into crabs from your own fasta file (e.g., the Rees fish mitochondria bioproject)
+Note: the first item in the fasta header has to be just an accession number or a species name (see crabs github). We will process these files all the way through taxonomy assignment first in the command line so we can see clearly what happens to them.
 
 1. Make directories within the main one for all the raw reference database downloads.
 ```
 mkdir fish
 mkdir mam
 mkdir herps
-mkdir reftax
 ```
-### Import and process private reference sequence data
-2. Curate any custom reference databases
-Get CUSTOM reference sequences into crabs from your own fasta file (e.g., the Rees fish mitochondria bioproject)
-Note: the first item in the fasta header has to be just an accession number or a species name (see crabs github). We will process these files all the way through taxonomy assignment first in the command line so we can see clearly what happens to them.
-
+2. activate the conda environment with CRABS installed and import first fasta file of custom sequences into CRABS format.
+Our first file is fish mitochondrial sequences from of Rees et al.. Note: this may be unnecessary as they all seem to have accession numbers from GenBank which we'll be accessing in the next section. Note the use of "--seq_header accession" as the sequence labels are accession numbers. In the next one, it will be species.
 ```
-# activate the conda environment with CRABS installed
 conda activate py38
 
-# import fasta of Rees fish mitochondrial sequences into CRABS format (likely unnecessary as they are in genbank)
 crabs db_import --input rees.fasta --output custom1.fasta --seq_header accession --delim ' '
-
-# in silico pcr to get sequences out of combined fish sequence file
+```
+3. Use in silico pcr to get some amplicon (MiFish) sequences out of the fasta file you just imported. This will only extract amplicons that have primers attached, and only if the primers match the MiFish primers with error rate < 4.5.
+```
 crabs insilico_pcr \
 --input custom1.fasta \
 --output custom1.MiFish.fasta \
 --fwd GTCGGTAAAACTCGTGCCAGC \
 --rev CATAGTGGGGTATCTAATCCCAGTTTG \
 --error 4.5
-
-# pga to exctract more sequences from the combined NCBI data
+```
+4. Use pga to exctract more sequences from the file
+```
 crabs pga --input custom1.fasta \
 --output custom1.MiFish.pga60.fasta \
 --database custom1.MiFish.fasta \
 --fwd GTCGGTAAAACTCGTGCCAGC --rev CATAGTGGGGTATCTAATCCCAGTTTG \
 --speed slow --percid 0.60 --coverage 0.95 --filter_method strict
-
-# remove "_12S" from the end of Rutgers eDNA Lab local fish sequence headers
-  # first element of header has to either be just the accession number or just the species name
+```
+5. Import the second local database (step 1): remove "_12S" from the end of the fish sequence labels so that the label is an exact match for the species_name (with underscore in place of space).
+```
 sed 's/_12S//g' Fin_Clip_Species_List_NoFHCF.fasta > Fin_Clip_Species_List_NoFHCF.for.fasta 
-
-# import fasta of Rutgers eDNA Lab local fish 12S sequences into CRABS format
+```
+6. Import the 2nd local sequence fasta into CRABS format. This one is from a Rutgers eDNA Lab 12S sequencing effort for fish and again has the species name (Genus_species) as the sequence label.
+```
 crabs db_import --input Fin_Clip_Species_List_NoFHCF.for.fasta --output custom2.fasta --seq_header species --delim ' '
-
-# in silico pcr to get sequences out of combined fish sequence file
-# first part of mifish primer was cut off: GTCGGTAAAAC
+```
+7. Perform in silico pcr to get amplicon sequences out of the 2nd local fish sequence file. Note that the fwd primer is slightly different as the first part of the MiFish primer was cut off in the sequences file (i.e., this part was missing from the published MiFish forward primer: GTCGGTAAAAC).
+```
 crabs insilico_pcr \
 --input custom2.fasta \
 --output custom2.MiFish.fasta \
 --fwd TCGTGCCAGC \
 --rev CATAGTGGGGTATCTAATCCCAGTTTG \
 --error 4.5
-
-# pga to exctract more sequences from the combined NCBI data
-  # note: had to use custom1.MiFish.pga60.fasta as the database as PCR revealed nothing
-   # first part of mifish fwd primer was cut off: GTCGGTAAAAC
+```
+8. Use pga to exctract more sequences from the 2nd file. Again, we use the truncated MiFish forward primer.
+```
 crabs pga --input custom2.fasta \
 --output custom2.MiFish.pga60.fasta \
 --database custom2.MiFish.fasta \
 --fwd TCGTGCCAGC --rev CATAGTGGGGTATCTAATCCCAGTTTG \
 --speed slow --percid 0.60 --coverage 0.95 --filter_method strict
-
-# fix 2 typos in fish names in custom database
+```
+9. Use sed to fix 2 typos in fish names in the 2nd local database
+```
 sed -i 's/Misgurnus_angullicaudatus/Misgurnus_anguillicaudatus/g' custom2.MiFish.pga60.fasta
 sed -i 's/Anguillla_rostrata/Anguilla_rostrata/g' custom2.MiFish.pga60.fasta
-
-# this next part is just to test if taxonomy assignment works 
-  # i.e., to make sure the sequences don't get put into "missing" file and get lost
-
+```
+10. This next part is just to test if the taxonomy assignment works. I.e., to make sure the sequences don't get put into the "missing" file and get lost when we do the final taxonomy assignment to the combined reference database.
+```
 crabs db_merge \
 --output custom.MiFish.pga60.merged.test.fasta --uniq yes \
 --input custom1.MiFish.pga60.fasta custom2.MiFish.pga60.fasta
@@ -514,7 +516,7 @@ crabs assign_tax \
 rm *.test.*
 ```
 ### Get and process reference sequences from public databases
-3. Download mitochondrial sequences from GenBank, MitoFish, etc. for fish, mammals, and 'herps' (birds, amphibians, reptiles) separately. First create an .sh script called ref01_mifish_fish.sh in your main directory and paste the following into it. Note that you'll need to either customize the code related to the custom reference databases below or else comment them out. GenBank search term tips to customize it (e.g., could just download relevant families): https://otagomohio.github.io/hacky2021/sessions/1005_ncbi/. Note: you'll need to change "your@email.edu" to your own email address to download from GenBank. Start with the fish:
+11. Download mitochondrial sequences from GenBank, MitoFish, etc. for fish, mammals, and 'herps' (birds, amphibians, reptiles) separately. First create an .sh script called ref01_mifish_fish.sh in your main directory and paste the following into it. Note that you'll need to either customize the code related to the custom reference databases below or else comment them out. GenBank search term tips to customize it (e.g., could just download relevant families): https://otagomohio.github.io/hacky2021/sessions/1005_ncbi/. Note: you'll need to change "your@email.edu" to your own email address to download from GenBank. Start with the fish:
 ```
 #!/bin/bash
 
@@ -595,7 +597,7 @@ crabs db_merge \
 CRABS_Fish_ncbi_dl.MiFish.pga60.fasta
 
 ```
-4. Now make one for mammals (mifish_mam.sh):
+12. Now make one for mammals (mifish_mam.sh):
 ```
 #!/bin/bash
 
@@ -651,7 +653,7 @@ crabs pga --input CRABS_Mammals_ncbi_dl.fasta \
 --speed slow --percid 0.60 --coverage 0.95 --filter_method strict
 
 ```
-5. Now make one for birds/fish/amphibians (mifish_herps.sh):
+13. Now make one for birds/fish/amphibians (mifish_herps.sh):
 ```
 #!/bin/bash
 
@@ -690,7 +692,7 @@ crabs pga --input CRABS_Herps_ncbi_dl.fasta --output CRABS_Herps_ncbi_dl.MiFish.
 --speed slow --percid 0.60 --coverage 0.95 --filter_method strict
 
 ```
-6. Use sbatch to run each of the scripts you just made from within their respective folder: fish, mam, or herps.
+14. Use sbatch to run each of the scripts you just made from within their respective folder: fish, mam, or herps.
 ```
 cd fish
 sbatch ../ref01_mifish_fish.sh
@@ -699,7 +701,7 @@ sbatch ../ref02_mifish_herps.sh
 cd mam
 sbatch ../ref03_mifish_mam.sh
 ```
-7. Combine all reference databases and add taxonomy
+15. Combine all reference databases and add taxonomy
 ```
 conda activate py38
 
@@ -751,7 +753,7 @@ crabs seq_cleanup --input refdb/CRABS_Vertebrates_ncbiMitofishLocal.MiFish.pga60
 ###Subset to include only species expected to occur in the area
 The approach of taxonomic assignment based on a geographically localized reference database was adopted based on the work of Gold et al., (2021). It prevents many "genus-level" taxonomic assignments that can incorrectly result from lowest-common ancestor algorithms (e.g., ecotag) when the reference database includes species that are out of range; specifically, when there are out-of-range species that are closely related evolutionarily and therefore share very similar mitochondrial sequences (e.g., the MiFish 12S sequence). You can always assess later whether you think an out-of-range species is a plausible ID given the data by performing a blast search against a larger database later (see that section below). 
 
-8. Make a version that is a subset of only local NJ species. First, make a text file with a list of all the vertebrate species found in New Jersey. This list was compiled from 4 websites: 
+16. Make a version that is a subset of only local NJ species. First, make a text file with a list of all the vertebrate species found in New Jersey. This list was compiled from 4 websites: 
 https://dep.nj.gov/njfw/fishing/freshwater/freshwater-fish-of-new-jersey/
 https://dep.nj.gov/njfw/education/online-field-guide-for-reptiles-and-amphibians/
 https://www.nj.gov/dep/fgw/chkbirds.htm
@@ -1337,7 +1339,7 @@ Canis lupus
 Felis catus
 Didelphis virginiana
 ```
-9. Make a NJ subset of the reference database using the CRABS function db_subset and the list you just made. Note: same results if you swap the space within the binomials with an underscore.
+17. Make a NJ subset of the reference database using the CRABS function db_subset and the list you just made. Note: same results if you swap the space within the binomials with an underscore.
 ```
 crabs db_subset --input CRABS_Vertebrates_ncbiMitofishLocal.MiFish.pga60.uni.cln.tsv \
 --output CRABS_Vertebrates_ncbiMitofishLocal.MiFish.pga60.uni.cln.njs.tsv \
@@ -1350,7 +1352,7 @@ cat tmp.tsv CRABS_Vertebrates_ncbiMitofishLocal.MiFish.pga60.uni.cln.njs.tsv > C
 
 rm tmp.tsv
 ```
-9. Use the following R script to make the 2 final CRABS reference databases into fasta files: the full version and the NJ subset. The fasta will include a taxid for each entry that will work with obitools/ecotag taxonomy assignment. First, using nano, make an R script in the main directory called ref04_crabs2fasta.R with the following code in it:
+18. Use the following R script to make the 2 final CRABS reference databases into fasta files: the full version and the NJ subset. The fasta will include a taxid for each entry that will work with obitools/ecotag taxonomy assignment. First, using nano, make an R script in the main directory called ref04_crabs2fasta.R with the following code in it:
 ```
 # input the path to the full CRABS output reference file
 crab_db_filepath_fulldb <- "refdb/CRABS_Vertebrates_ncbiMitofishLocal.MiFish.pga60.uni.cln.tsv"
