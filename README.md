@@ -154,8 +154,8 @@ This is how to run the script using sbatch (again, run this from within the rawd
 sbatch ../f01_illuminapairedend.X.sh
 ```
 10. Make a new directory within the main project directory called "aligned" and move the fastq files into subfolders within in by sequencing pool (e.g., folder X, Y, and Z).
-### Trim adapters and primers from reads
-11. Use nano to make a script in the main directory called f02_cutadapt.sh and paste the text below into it. This will trim primers and adapters from the sequences creating new files of trimmed sequences with the suffix *.ali.cut.fastq. It also runs prinseq.sh to remove sequences w/ > 21 N bases. Change the file path to the prinseq-lite.pl script before you run this. Run the script from within the directory your files are in.
+### Trim off adapters and project codes
+11. Use nano to make a script in the main directory called f02_cutadapt.sh and paste the text below into it. This will trim adapters from the sequences creating new files of trimmed sequences with the suffix *.ali.cut.fastq. You will need to make sure you are using the right adapter & project code sequences. (Viewing the sequences in a text file and searching for the primers & their reverse complements can be helpful with understanding this.) The code below also runs prinseq.sh to remove sequences w/ > 21 N bases. Change the file path to the prinseq-lite.pl script before you run this. Note that there are other ways to do this too if that software doesn't work. Run this script from within the directory your files are in.
 ```
 #!/bin/bash
 
