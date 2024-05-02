@@ -1,7 +1,7 @@
-# A metabarcoding bioinformatics tutorial using obitools and Swarm
-This is an example workflow, using the Rutgers Amarel cluster to analyze eDNA samples taken to characterize freshwater fish communities within New Jersey, USA. The molecular analysis amplified the 'MiFish' section of the 12S mitochondrial region using Illumina next-generation sequencing (metabarcoding). The workflow follows the obitools pipeline (Boyer et al., 2016) with some modifications. It is largely based on the sources listed below and also code generously shared by others (esp. B. Kwait, O. Stringham, O. Wangensteen, D. Marquina). But if you find it helpful to cite the full compiled workflow, you can also cite this page as:
+# A metabarcoding bioinformatics tutorial using obitools, Swarm, and CRABS
+This is an example workflow, using the Rutgers Amarel cluster to analyze eDNA samples taken to characterize freshwater fish communities within New Jersey, USA. The molecular analysis amplified the 'MiFish' section of the 12S mitochondrial region using Illumina next-generation sequencing (metabarcoding). The workflow follows the obitools pipeline (Boyer et al., 2016) with some modifications. It is largely based on the sources listed below and also code generously shared by others (especially B. Kwait, O. Stringham, O. Wangensteen, D. Marquina). But if you find it helpful to cite the full compiled workflow, you can also cite this page as:
 
-Allen, M. C. 2024. A metabarcoding bioinformatics tutorial using obitools and Swarm. URL: https://github.com/mikeallen-eco/fish23
+Allen, M. C. 2024. A metabarcoding bioinformatics tutorial using obitools, Swarm, and CRABS. URL: https://github.com/mikeallen-eco/fish23
 
 <ins>Sources</ins>
 1. Boyer, F., Mercier, C., Bonin, A., Le Bras, Y., Taberlet, P., & Coissac, E. (2016). obitools: A unix‐inspired software package for DNA metabarcoding. Molecular ecology resources, 16(1), 176-182.
@@ -13,6 +13,7 @@ https://metagusano.github.io/publications/Bioinformatic%20Pipeline%20For%20Metab
 https://github.com/metabarpark/R_scripts_metabarpark/blob/master/owi_recount_swarm
 5. Gold, Z., Curd, E. E., Goodwin, K. D., Choi, E. S., Frable, B. W., Thompson, A. R., ... & Barber, P. H. (2021). Improving metabarcoding taxonomic assignment: A case study of fishes in a large marine ecosystem. Molecular ecology resources, 21(7), 2546-2564.
 6. Jeunen, G. J., Dowle, E., Edgecombe, J., von Ammon, U., Gemmell, N. J., & Cross, H. (2023). CRABS—a software program to generate curated reference databases for metabarcoding sequencing data. Molecular Ecology Resources, 23(3), 725-738.
+7. Mahé, F., Rognes, T., Quince, C., de Vargas, C., & Dunthorn, M. (2014). Swarm: robust and fast clustering method for amplicon-based studies. PeerJ, 2, e593.
 
 # Connect to the cluster
 1. Connect to the Amarel cluster  
