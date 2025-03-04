@@ -2,7 +2,7 @@
 
 **NOTE:** this tutorial uses an older version of CRABS (v0.8) and is therefore a little out of date. I plan to archive this and update it to work with CRABS v1.0.7 soon. It also uses obitools v2, which can be hard to install as it requires an old version of Python. 
 
-This is an example workflow, using the Rutgers Amarel cluster to analyze eDNA samples taken to characterize freshwater fish communities within New Jersey, USA. The molecular analysis amplified the 'MiFish' section of the 12S mitochondrial region using Illumina next-generation sequencing (metabarcoding). The workflow follows the obitools pipeline (Boyer et al., 2016) with some modifications. It is largely based on the sources listed below and also code generously shared by others (especially B. Kwait, O. Stringham, O. Wangensteen, D. Marquina). But if you find it helpful to cite the full compiled workflow, you can also cite this page as:
+This is an example workflow, using the Rutgers Amarel cluster to analyze eDNA samples taken to characterize freshwater fish communities within New Jersey, USA. The molecular analysis amplified the 'MiFish' section of the 12S mitochondrial region using Illumina next-generation sequencing (metabarcoding). The workflow follows the obitools pipeline (Boyer et al., 2016) with some modifications. It is largely based on the sources listed below and on code generously shared by others (especially B. Kwait & O. Stringham \[directly]; O. Wangensteen & D. Marquina \[via an online course and material on the web]). If you want to cite the tutorial, you can use:
 
 Allen, M. C. 2024. A metabarcoding bioinformatics tutorial using obitools, Swarm, and CRABS. URL: https://github.com/mikeallen-eco/fish23
 
